@@ -17,6 +17,67 @@ own page, so you can lift shapes if that is faster than rebuilding them.
 
 ---
 
+## 0. DAY 3 CORRECTIONS — read this first
+
+Checked against the code on `main`, 27 September. **Three claims on the deck are not true
+yet.** Fix these before anything else; they are the exact kind of unverifiable claim this
+product is pitched against, and a judge with the repo open can check all three.
+
+| Deck says | Code says | Do this |
+| --- | --- | --- |
+| Slide 2: "**Six** generation parameters — audience, tone, language, detail, objective, style" | `packages/shared/src/config.ts` has **four**: audience, tone, detail, language | Either Fareed adds `objective` and `style` today, or **change the slide to four** and drop those two words |
+| Slide 2: "One source, **seven** artefact types … all generated together" | `FormatId` has **five**: advisory, executive_summary, linkedin_post, x_thread, video_package | Say "**five artefact types today, seven specified**". Presentation and infographic are stretch, not built |
+| Slide 3 diagram: "CLOUD, **GEMINI**" | `packages/ai/src/adapters.ts` imports `groq-sdk` and exports `new GroqAdapter()` | Change the deck to **Groq**, and get the exact model id from Fareed. Also tell B/D that `.env.example` still says `GEMINI_API_KEY` — it is stale |
+
+**Internal inconsistency to fix while you are there:** the slide 2 strip says "TRANSFORM —
+5 formats, one source" but The Resolution says seven, and "One index, not five prompts"
+disagrees with both. Pick **five** everywhere on slide 2 and the slide is honest and
+consistent in one edit.
+
+### Two slides are still the sonar team's content
+
+| Page | Problem |
+| --- | --- |
+| 3 | The **TechStack block** is SONAR-DRISHTI's: YOLOv8s, ONNX Runtime, OpenCV, scikit-learn, TensorRT, XTF ping-header parser, pyproj, shapely, Django, Celery, React-Leaflet, Recharts. None of it is ours. Replace with the tech-stack strip in §3, slide 3 |
+| 8 | **Research and References is entirely the sonar deck**: AI4Shipwrecks, SubPipeMini2, Roboflow side-scan-sonar, Kaggle sonar-mine, AURORA, SW-Net, DFSE-YOLO, GhostNetZero, GhostVision, Transformer-YOLOv5. Replace wholesale with §3, slide 6 |
+
+Page 8 is the most damaging error in the deck. It cites another problem statement's datasets
+and papers under our team name.
+
+### Delete three pages
+
+Pages **4**, **6** and **9** are leftovers — two raw text dumps of slide content and one
+blank page. Deleting them takes the deck to six pages: title plus five content slides, which
+is the cap.
+
+### Also on page 3
+
+The **Node / Technical content** table is truncated in every row — "unpdf, mammoth → UTF-8,
+CRLF to", "z.toJSONSchema( Canonical) in the". Either widen the column and let it wrap, or
+delete the table: the architecture diagram beside it already carries the story, and a
+half-sentence reads worse than no sentence.
+
+### What is missing entirely
+
+1. **No screenshot anywhere in the deck.** Guide A calls screenshot #4 — a claim selected,
+   its source highlighted — the key image. Faizan's UI merged this morning, so these can be
+   taken today. Without one, the deck asserts a running system and shows none.
+2. **No measured numbers anywhere.** The old slide 4 had a "measured on the prototype" block;
+   the rewrite dropped it. Feasibility is scored on evidence. Put the block back, bracketed,
+   and fill it when Fareed sends the table.
+3. **The two drift examples are gone from slide 2.** They were the argument: *consistent with
+   a possible* becoming *was attacked by*, and 37 becoming 42. The new illustration strip is
+   good, but it shows the pipeline, not why the pipeline must exist. If anything on slide 2
+   has to give way, give way to these.
+
+### Smaller fixes
+
+- Slide 1 does not carry the product name. Add **MetaMorph-AI** under the PS title.
+- Slide 1's title wraps oddly — "Gen AI" sits alone on the label line.
+- Slide 7's "Nation/Public" stakeholder overlaps the "last mile" text block over the India map.
+- Confirm **Team ID 120014 / StrawHats** is right for *this* problem statement, not carried
+  over from the sonar submission.
+
 ## 1. The clock
 
 Deadline **30 September**. Guide A's plan submits on the 29th and keeps the 30th as buffer.
