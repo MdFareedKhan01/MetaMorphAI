@@ -73,7 +73,7 @@ export class GroqAdapter implements LLMAdapter {
           },
         ],
         temperature: 0,
-        max_completion_tokens: 4096,
+        max_completion_tokens: 8192,
         response_format: request.jsonSchema
           ? {
               type: 'json_schema',
