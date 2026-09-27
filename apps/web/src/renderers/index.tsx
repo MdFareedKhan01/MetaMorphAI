@@ -30,6 +30,10 @@ function AdvisoryView({ content: c }: { content: any }) {
       <Heading>Indicators</Heading>
       <ul className="font-mono text-sm">{c.indicators.map((i: any) => <li key={i.value}>{i.type}: {i.value}</li>)}</ul>
       <Heading>Mitigations</Heading><List items={c.mitigations} ordered />
+      {c.references?.length > 0 && <>
+        <Heading>References</Heading>
+        <ul className="text-sm text-slate-600">{c.references.map((r: string) => <li key={r}>{r}</li>)}</ul>
+      </>}
     </div>
   );
 }

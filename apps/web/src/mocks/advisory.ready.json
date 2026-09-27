@@ -28,12 +28,13 @@
       { "id": "c3", "text": "SSL-VPN gateways running unpatched firmware from before June 2026.", "status": "fact", "grounded": true, "source_refs": ["span_3"] }
     ],
     "indicators": [
-      { "type": "ip", "value": "198.51.100.23" },
-      { "type": "domain", "value": "vpn-portal-update.example" }
+      { "type": "ip", "value": "198.51.100.23", "source_refs": ["span_3"] },
+      { "type": "domain", "value": "vpn-portal-update.example", "source_refs": ["span_3"] }
     ],
     "mitigations": [
       { "id": "c4", "text": "Apply the vendor's September security patch immediately.", "status": "fact", "grounded": true, "source_refs": ["span_4"] },
       { "id": "c5", "text": "Force a password reset for all VPN accounts as a precaution.", "status": "inference", "grounded": false, "source_refs": [] }
-    ]
+    ],
+    "references": ["CVE-2026-31007", "Vendor advisory VA-2026-114"]
   }
 }
