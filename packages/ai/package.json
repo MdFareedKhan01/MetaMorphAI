@@ -6,7 +6,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "try-revision": "dotenv -e ../../.env -- tsx scripts/test-revision.ts"
   },
   "dependencies": {
     "@ps154/shared": "*",

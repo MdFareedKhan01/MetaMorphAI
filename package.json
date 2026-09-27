@@ -26,7 +26,8 @@
     "smoke": "tsx apps/server/scripts/smoke.ts",
     "try": "tsx packages/ai/scripts/try.ts",
     "docs:html": "node docs/scripts/build-html.mjs",
-    "postinstall": "node scripts/postinstall.mjs"
+    "postinstall": "node scripts/postinstall.mjs",
+    "try-revision": "tsx packages/ai/scripts/test-revision.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.4",
