@@ -1,0 +1,40 @@
+{
+  "task_id": "t1",
+  "batch_id": "b1",
+  "format_id": "advisory",
+  "effective_config": { "audience": "Sector CISOs", "tone": "formal", "detail": "medium", "language": "en" },
+  "status": "ready",
+  "version": 1,
+  "grounding_score": 0.94,
+  "verification": {
+    "passed": true,
+    "revised": true,
+    "fixes": [
+      { "check": "hedge", "key": "f1", "detail": "Softened an absolute claim about patch availability to match the source." }
+    ],
+    "open_issues": [
+      { "check": "grounding", "key": "o1", "detail": "The claimed victim count has no matching passage in the source." }
+    ]
+  },
+  "meta": { "provider": "cloud" },
+  "content": {
+    "severity": "high",
+    "title": "Coordinated credential-stuffing campaign against sector VPN gateways",
+    "summary": [
+      { "id": "c1", "text": "A campaign targeting VPN gateways across 37 organisations was recorded between 3 and 9 September.", "status": "fact", "grounded": true, "source_refs": ["span_1"] },
+      { "id": "c2", "text": "The pattern of source IPs suggests a single coordinated actor rather than opportunistic scanning.", "status": "inference", "grounded": true, "source_refs": ["span_2"] }
+    ],
+    "affected_systems": [
+      { "id": "c3", "text": "SSL-VPN gateways running unpatched firmware from before June 2026.", "status": "fact", "grounded": true, "source_refs": ["span_3"] }
+    ],
+    "indicators": [
+      { "type": "ip", "value": "198.51.100.23", "source_refs": ["span_3"] },
+      { "type": "domain", "value": "vpn-portal-update.example", "source_refs": ["span_3"] }
+    ],
+    "mitigations": [
+      { "id": "c4", "text": "Apply the vendor's September security patch immediately.", "status": "fact", "grounded": true, "source_refs": ["span_4"] },
+      { "id": "c5", "text": "Force a password reset for all VPN accounts as a precaution.", "status": "inference", "grounded": false, "source_refs": [] }
+    ],
+    "references": ["CVE-2026-31007", "Vendor advisory VA-2026-114"]
+  }
+}

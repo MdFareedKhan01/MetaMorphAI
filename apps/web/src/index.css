@@ -1,1 +1,5 @@
 @import "tailwindcss";
+
+/* Alt+P toggles this — a judge reads the screen from across a room (NFR-14). */
+html.projector { font-size: 19px; }
+html.projector body { color: #0f172a; }
