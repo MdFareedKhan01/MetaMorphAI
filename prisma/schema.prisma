@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(uuid())
+  name          String     @unique
+  role          String     // operator | reviewer | admin
+  password_hash String
+  batches       BatchJob[]
+  @@map("users")
+}
+
+model Source {
+  id             String     @id @default(uuid())
+  filename       String?
+  mime_type      String
+  raw_content    String
+  classification String     // public | internal | restricted
+  spans          Json
+  canonical      Json?
+  source_hash    String
+  metadata       Json       @default("{}")
+  created_by     String
+  created_at     DateTime   @default(now())
+  purge_after    DateTime?
+  batches        BatchJob[]
+  @@map("sources")
+}
+
+model BatchJob {
+  batch_id       String     @id @default(uuid())
+  source_id      String
+  source         Source     @relation(fields: [source_id], references: [id])
+  created_by     String
+  creator        User       @relation(fields: [created_by], references: [id])
+  global_config  Json
+  overall_status String     @default("queued")
+  created_at     DateTime   @default(now())
+  completed_at   DateTime?
+  artifacts      Artifact[]
+  @@map("batch_jobs")
+}
+
+model Artifact {
+  task_id          String   @id @default(uuid())
+  batch_id         String
+  batch            BatchJob @relation(fields: [batch_id], references: [batch_id])
+  format_id        String
+  effective_config Json
+  content          Json?
+  grounding_score  Float?
+  verification     Json?
+  meta             Json?
+  status           String   @default("waiting")
+  review_state     String   @default("draft")
+  review_comment   String?
+  reviewed_by      String?
+  error_log        String?
+  version          Int      @default(1)
+  updated_at       DateTime @updatedAt
+  claims           Claim[]
+  @@map("artifacts")
+}
+
+model Claim {
+  id          String   @id @default(uuid())
+  task_id     String
+  artifact    Artifact @relation(fields: [task_id], references: [task_id], onDelete: Cascade)
+  claim_key   String   // "c3": the id C sees inside content
+  text        String
+  source_refs Json
+  status      String   // fact | inference | framing
+  grounded    Boolean
+  @@map("claims")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  seq       Int      @unique
+  actor_id  String?
+  target_id String?
+  action    String
+  metadata  Json     @default("{}")
+  ts        DateTime
+  prev_hash String
+  row_hash  String
+  @@map("audit_log")
+}
