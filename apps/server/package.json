@@ -2,10 +2,6 @@
   "name": "@ps154/server",
   "private": true,
   "type": "module",
-  
-  "dependencies": {
-    "@ps154/shared": "*"
-  },
   "scripts": {
     "dev:api": "tsx watch --env-file=../../.env src/api.ts",
     "dev:worker": "tsx watch --env-file=../../.env src/worker.ts",
