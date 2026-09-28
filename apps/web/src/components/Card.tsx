@@ -9,6 +9,12 @@ import { VerificationBadge } from './VerificationBadge';
 const LABELS: Record<string, string> = { advisory: 'Security advisory', executive_summary: 'Executive summary',
   linkedin_post: 'LinkedIn post', x_thread: 'X thread', video_package: 'Video package' };
 const PHASE: Record<string, string> = { running: 'Writing', validating: 'Checking facts', revising: 'Repairing' };
+const PILL: Record<string, string> = {
+  waiting: 'bg-slate-100 text-slate-600', running: 'bg-sky-100 text-sky-800',
+  validating: 'bg-indigo-100 text-indigo-800', revising: 'bg-amber-100 text-amber-900',
+  ready: 'bg-emerald-100 text-emerald-800', error: 'bg-red-100 text-red-800',
+};
+const LIVE = ['running', 'validating', 'revising'];
 
 export function CardView({ card, globalConfig, onRegenerate }:
     { card: Card; globalConfig: Config; onRegenerate: () => void }) {
@@ -21,7 +27,10 @@ export function CardView({ card, globalConfig, onRegenerate }:
         {overridden.length > 0 && (
           <span className="rounded bg-violet-100 px-2 text-xs text-violet-800">{overridden.join(', ')} overridden</span>)}
         {(card.artifact?.version ?? 1) > 1 && <span className="text-xs text-slate-500">v{card.artifact!.version}</span>}
-        <span className="ml-auto text-xs font-medium uppercase text-slate-500">{card.status}</span>
+        <span className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${PILL[card.status]}`}>
+          {LIVE.includes(card.status) && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />}
+          {card.status}
+        </span>
       </header>
       {card.status === 'ready' && card.artifact ? <Ready a={card.artifact} onRegenerate={onRegenerate} />
         : card.status === 'error' ? <Failed message={card.error?.message} onRetry={onRegenerate} />
@@ -38,8 +47,9 @@ function Working({ card }: { card: Card }) {
   return (
     <div className="space-y-2">
       <p className="text-sm">{PHASE[card.status]}{card.detail ? ` — ${card.detail}` : ''} · {String(Math.floor(s / 60)).padStart(2, '0')}:{String(s % 60).padStart(2, '0')}</p>
-      <div className="h-2 animate-pulse rounded bg-slate-200" />
-      <div className="h-2 w-2/3 animate-pulse rounded bg-slate-200" />
+      <div className="h-2.5 animate-pulse rounded-full bg-slate-200" />
+      <div className="h-2.5 w-2/3 animate-pulse rounded-full bg-slate-200" />
+      <div className="h-2.5 w-1/2 animate-pulse rounded-full bg-slate-200" />
     </div>
   );
 }
