@@ -55,12 +55,18 @@ export function identifiers(
     add('ip', m[0]);
   }
 
-  // Domains, including [.] obfuscation
-  for (const m of text.matchAll(
-    /\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\[\.\][a-zA-Z0-9.-]+)?\b/g
-  )) {
-    add('domain', m[0]);
-  }
+//email addresses
+for (const m of text.matchAll(
+  /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi
+)) {
+  add('email', m[0]);
+}
+//domain
+for (const m of text.matchAll(
+  /(?<![@a-zA-Z0-9-])(?:[a-zA-Z0-9-]+(?:\.|\[.\]))+[a-zA-Z]{2,}(?![a-zA-Z0-9-])/g
+)) {
+  add('domain', m[0]);
+}
 
   // SHA-256 / SHA-1 / MD5 style hashes
   for (const m of text.matchAll(

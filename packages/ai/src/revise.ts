@@ -118,6 +118,14 @@ RULES:
 4. Preserve uncertainty from the source.
 5. Keep each claim's meaning as close to the original
    as possible.
+5a. For a hedge finding, preserve the uncertainty explicitly
+    expressed in the cited source span. Do not turn "could",
+    "may", "potential", "likely", etc. into an unconditional
+    statement.
+5b. For a grounding finding, rewrite the claim so that its
+    wording is directly supported by the cited source span.
+    Prefer wording from the source over paraphrases that add
+    unsupported meaning.
 6. Do not broaden any claim.
 7. Use only source_refs that actually exist in the
    supplied source spans.
@@ -128,7 +136,16 @@ RULES:
 12. Do not modify claims that are not supplied as targets.
 
 TARGET CLAIMS AND FINDINGS:
-${JSON.stringify(input.targets)}
+${JSON.stringify(
+  input.targets.map((target) => ({
+    claim: target.claim,
+    findings: target.findings.map((finding) => ({
+      check: finding.check,
+      key: finding.key,
+      detail: finding.detail,
+    })),
+  }))
+)}
 
 RELEVANT SOURCE SPANS:
 ${JSON.stringify(relevantSpans)}

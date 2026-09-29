@@ -54,6 +54,45 @@ export interface RunFormatInput {
     | 'restricted';
 }
 
+function getFormatCanonical(
+  canonical: Canonical,
+  format: Phase1FormatId
+): Partial<Canonical> {
+  switch (format) {
+    case 'advisory':
+      return {
+        severity: canonical.severity,
+        key_facts: canonical.key_facts,
+        affected_systems:
+          canonical.affected_systems,
+        indicators:
+          canonical.indicators,
+        recommendations:
+          canonical.recommendations,
+      };
+
+    case 'executive_summary':
+      return {
+        severity: canonical.severity,
+        key_facts: canonical.key_facts,
+        affected_systems:
+          canonical.affected_systems,
+        recommendations:
+          canonical.recommendations,
+      };
+
+    case 'linkedin_post':
+      return {
+        severity: canonical.severity,
+        key_facts: canonical.key_facts,
+        affected_systems:
+          canonical.affected_systems,
+        recommendations:
+          canonical.recommendations,
+      };
+  }
+}
+
 function nodesToClaims(
   nodes: Node[]
 ): Claim[] {
@@ -134,19 +173,27 @@ export async function runFormat(
     input.format
   );
 
-  const system = PROMPTS[input.format]
-    .replace(
-      '{{canonical}}',
-      JSON.stringify(
-        input.canonical
-      )
+
+
+  const formatCanonical =
+  getFormatCanonical(
+    input.canonical,
+    input.format
+  );
+
+const system = PROMPTS[input.format]
+  .replace(
+    '{{canonical}}',
+    JSON.stringify(
+      formatCanonical
     )
-    .replace(
-      '{{schema}}',
-      JSON.stringify(
-        z.toJSONSchema(schema)
-      )
-    );
+  )
+  .replace(
+    '{{schema}}',
+    JSON.stringify(
+      z.toJSONSchema(schema)
+    )
+  );
 
   const user = JSON.stringify({
     audience:

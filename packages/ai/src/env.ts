@@ -5,7 +5,7 @@ const Env = z.object({
   GROQ_API_KEY: z.string().default('gsk_placeholder'),
   CLOUD_MODEL: z.string().default('llama-3.3-70b-versatile'),
   CLOUD_RPM: z.coerce.number().positive().default(10),
-
+  CLOUD_MIN_INTERVAL_MS: z.coerce.number().int().nonnegative().default(6500),
   OLLAMA_URL: z.string().url().default('http://localhost:11434'),
   LOCAL_MODEL: z.string().default('qwen2.5:7b'),
   LOCAL_NUM_CTX: z.coerce.number().positive().default(8192),

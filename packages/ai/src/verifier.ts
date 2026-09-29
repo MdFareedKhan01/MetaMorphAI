@@ -221,43 +221,72 @@ function verifyIdentifiers(
  * if the cited source contains hedging language and
  * the generated claim does not, flag it.
  */
-function verifyHedges(
-  claims: Claim[],
-  spans: Span[]
-): Finding[] {
+function verifyHedges(claims: Claim[], spans: Span[]): Finding[] {
   const findings: Finding[] = [];
 
   const spanMap = new Map(
-    spans.map((span) => [
-      span.span_id,
-      span.text,
-    ])
+    spans.map((span) => [span.span_id, span.text])
   );
 
   for (const claim of claims) {
-    if (claim.status === 'framing') {
-      continue;
-    }
+    if (claim.status === 'framing') continue;
 
-    const citedText = claim.source_refs
+    const citedSpans = claim.source_refs
       .map((ref) => spanMap.get(ref))
-      .filter(
-        (text): text is string =>
-          typeof text === 'string'
-      )
-      .join(' ');
+      .filter((text): text is string => typeof text === 'string');
 
-    if (
-      hasHedge(citedText) &&
-      !hasHedge(claim.text)
-    ) {
+    if (citedSpans.length === 0) continue;
+
+    /*
+     * Only flag the claim if the uncertainty is present in the
+     * source evidence that actually supports the claim.
+     *
+     * Previously we joined every cited span together. That meant:
+     *
+     *   span_19 = direct fact
+     *   span_20 = contains "could"
+     *   span_21 = direct fact
+     *
+     * could incorrectly cause the entire claim to receive a hedge
+     * finding.
+     */
+
+    const claimTerms = terms(claim.text);
+
+    const relevantSpans = citedSpans.filter((span) => {
+      const sourceTerms = terms(span);
+
+      if (claimTerms.size === 0 || sourceTerms.size === 0) {
+        return false;
+      }
+
+      let shared = 0;
+
+      for (const term of claimTerms) {
+        if (sourceTerms.has(term)) {
+          shared++;
+        }
+      }
+
+      return shared / claimTerms.size >= GROUNDING_THRESHOLD;
+    });
+
+    /*
+     * If none of the cited spans are sufficiently relevant,
+     * don't manufacture a hedge finding.
+     */
+    if (relevantSpans.length === 0) continue;
+
+    const sourceContainsHedge = relevantSpans.some((span) =>
+      hasHedge(span)
+    );
+
+    if (sourceContainsHedge && !hasHedge(claim.text)) {
       findings.push({
         check: 'hedge',
         key: claim.id,
         detail:
-          'The cited source contains uncertainty or ' +
-          'confidence language that is not preserved ' +
-          'in the generated claim.',
+          'The cited source contains uncertainty or confidence language that is not preserved in the generated claim.',
       });
     }
   }

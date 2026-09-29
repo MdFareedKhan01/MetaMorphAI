@@ -1,227 +1,364 @@
-import 'dotenv/config';
-
-import fs from 'node:fs';
-import { createHash } from 'node:crypto';
+import fs from 'node:fs/promises';
+import crypto from 'node:crypto';
 import Redis from 'ioredis';
 
-import { createEngine } from '../src/index';
+import { extractCanonical } from '../src/extract';
+import { runFormat } from '../src/generate';
+import { createRouter } from '../src/router';
+
 import type {
+  FormatId,
   Classification,
+  Config,
   Span,
 } from '@ps154/shared';
 
-function splitSpans(raw: string): Span[] {
-  return raw.split(/\r?\n/).map((text, index) => ({
-    span_id: `span_${index + 1}`,
-    text,
-    start_offset: 0,
-    end_offset: text.length,
-  }));
-}
-
-const args = process.argv.slice(2);
-
-const file =
-  args[0] ?? 'samples/demo-incident.md';
+const file = process.argv[2];
 
 const classification =
-  args[1] ?? 'public';
+  (process.argv[3] as Classification | undefined) ??
+  'public';
 
-const requestedFormat =
-  args[2];
-
-if (
-  !['public', 'internal', 'restricted'].includes(
-    classification
-  )
-) {
+if (!file) {
   console.error(
-    'Classification must be public, internal, or restricted'
+    'Usage: npm run try -- <source-file> <public|internal|restricted>'
   );
   process.exit(1);
 }
 
-const formats = [
+/*
+ * --------------------------------------------------
+ * Read source
+ * --------------------------------------------------
+ */
+
+const rawContent = await fs.readFile(file, 'utf8');
+
+/*
+ * --------------------------------------------------
+ * Build source spans
+ *
+ * The extraction pipeline expects spans to already
+ * exist on SourceForAI.
+ *
+ * Keep the same simple span representation used by
+ * the demo source.
+ * --------------------------------------------------
+ */
+
+const lines = rawContent.split(/\r?\n/);
+
+const spans: Span[] = [];
+
+let offset = 0;
+
+for (let i = 0; i < lines.length; i++) {
+  const text = lines[i];
+
+  if (text.trim().length > 0) {
+    spans.push({
+      span_id: `span_${spans.length + 1}`,
+      text,
+      start_offset: offset,
+      end_offset: offset + text.length,
+    });
+  }
+
+  offset += text.length + 1;
+}
+
+/*
+ * --------------------------------------------------
+ * Source hash
+ * --------------------------------------------------
+ */
+
+const sourceHash = crypto
+  .createHash('sha256')
+  .update(rawContent)
+  .digest('hex');
+
+/*
+ * --------------------------------------------------
+ * Redis + Router
+ * --------------------------------------------------
+ */
+
+const redis = new Redis();
+
+const router = createRouter(redis);
+
+/*
+ * --------------------------------------------------
+ * Config
+ *
+ * Same Phase-1 configuration used by the
+ * generation pipeline.
+ * --------------------------------------------------
+ */
+
+const config: Config = {
+  audience: 'general',
+  tone: 'formal',
+  detail: 'medium',
+  language: 'en',
+};
+
+/*
+ * --------------------------------------------------
+ * Source object
+ * --------------------------------------------------
+ */
+
+const source = {
+  id: file,
+  classification,
+  spans,
+  raw_content: rawContent,
+  source_hash: sourceHash,
+};
+
+/*
+ * --------------------------------------------------
+ * Extraction
+ * --------------------------------------------------
+ */
+
+console.log('\n=== SOURCE ===');
+console.log(`file: ${file}`);
+console.log(`classification: ${classification}`);
+console.log(`spans: ${spans.length}`);
+
+console.log('\n=== EXTRACTION ===');
+
+const extractionStart = Date.now();
+
+const extraction = await extractCanonical(
+  router,
+  source
+);
+
+const extractionWallTime =
+  Date.now() - extractionStart;
+
+console.log(
+  `provider: ${extraction.meta.provider}`
+);
+
+console.log(
+  `model: ${extraction.meta.model}`
+);
+
+console.log(
+  `latency_ms: ${extraction.meta.latency_ms}`
+);
+
+console.log(
+  `wall_time_ms: ${extractionWallTime}`
+);
+
+console.log(
+  `fallback_reason: ${
+    extraction.meta.fallback_reason ?? 'none'
+  }`
+);
+
+console.log(
+  `attempts: ${extraction.meta.attempts}`
+);
+
+/*
+ * --------------------------------------------------
+ * Canonical output
+ * --------------------------------------------------
+ */
+
+console.log('\n=== CANONICAL ===');
+
+console.dir(
+  extraction.canonical,
+  { depth: null }
+);
+
+/*
+ * --------------------------------------------------
+ * Phase 1 formats
+ * --------------------------------------------------
+ */
+
+const formats: FormatId[] = [
   'advisory',
   'executive_summary',
   'linkedin_post',
-] as const;
+];
 
-if (
-  requestedFormat &&
-  !formats.includes(
-    requestedFormat as typeof formats[number]
-  )
-) {
-  console.error(
-    `Format must be one of: ${formats.join(', ')}`
+/*
+ * --------------------------------------------------
+ * Generate all three
+ * --------------------------------------------------
+ */
+
+console.log('\n=== GENERATED OUTPUTS ===');
+
+for (const format of formats) {
+  console.log(
+    `\n${'='.repeat(70)}`
   );
-  process.exit(1);
-}
 
-const formatsToRun =
-  requestedFormat
-    ? [
-        requestedFormat as typeof formats[number],
-      ]
-    : formats;
+  console.log(
+    `FORMAT: ${format}`
+  );
 
-const raw =
-  fs.readFileSync(file, 'utf8');
+  console.log(
+    '='.repeat(70)
+  );
 
-const redis = new Redis(
-  process.env.REDIS_URL ??
-    'redis://localhost:6379'
-);
+  const start = Date.now();
 
-const engine =
-  createEngine({ redis });
+  const result = await runFormat(
+    router,
+    {
+      format,
+      canonical:
+        extraction.canonical,
+      spans,
+      config,
+      classification,
+    }
+  );
 
-const source = {
-  id: 'cli',
-  classification:
-    classification as Classification,
-  spans: splitSpans(raw),
-  raw_content: raw,
-  source_hash: createHash('sha256')
-    .update(raw)
-    .digest('hex'),
-};
+  const wallTime =
+    Date.now() - start;
 
-try {
-  // --------------------------------------------------
-  // EXTRACTION
-  // --------------------------------------------------
+  /*
+   * ----------------------------------------------
+   * Artifact
+   * ----------------------------------------------
+   */
 
-  const extractionStart =
-    performance.now();
+  console.log('\n--- ARTIFACT ---');
 
-  const {
-    canonical,
-    meta,
-  } =
-    await engine.extractCanonical(
-      source
+  console.dir(
+    result.artifact,
+    { depth: null }
+  );
+
+  /*
+   * ----------------------------------------------
+   * Claims
+   * ----------------------------------------------
+   */
+
+  console.log('\n--- CLAIMS ---');
+
+  console.dir(
+    result.claims,
+    { depth: null }
+  );
+
+  /*
+   * ----------------------------------------------
+   * Grounding
+   * ----------------------------------------------
+   */
+
+  console.log('\n--- GROUNDING ---');
+
+  const grounding =
+    result.grounding.total_claims === 0
+      ? 1
+      : result.grounding.grounded_count /
+        result.grounding.total_claims;
+
+  console.log(
+    `grounded: ${result.grounding.grounded_count}/${result.grounding.total_claims}`
+  );
+
+  console.log(
+    `score: ${grounding.toFixed(2)}`
+  );
+
+  /*
+   * ----------------------------------------------
+   * Verification
+   * ----------------------------------------------
+   */
+
+  console.log('\n--- VERIFICATION ---');
+
+  console.log(
+    `passed: ${result.verification.passed}`
+  );
+
+  console.log(
+    `revised: ${result.verification.revised}`
+  );
+
+  console.log(
+    `fixes: ${result.verification.fixes.length}`
+  );
+
+  console.log(
+    `open_issues: ${result.verification.open_issues.length}`
+  );
+
+  if (
+    result.verification.fixes.length > 0
+  ) {
+    console.log('\nFixes:');
+
+    console.dir(
+      result.verification.fixes,
+      { depth: null }
     );
+  }
 
-  const extractionWallTime =
-    performance.now() -
-    extractionStart;
+  if (
+    result.verification.open_issues.length > 0
+  ) {
+    console.log('\nOpen issues:');
+
+    console.dir(
+      result.verification.open_issues,
+      { depth: null }
+    );
+  }
+
+  /*
+   * ----------------------------------------------
+   * Generation metadata
+   * ----------------------------------------------
+   */
+
+  console.log('\n--- META ---');
 
   console.log(
-    '\n=== EXTRACTION MEASUREMENT ==='
+    `provider: ${result.meta.provider}`
   );
 
   console.log(
-    `provider: ${meta.provider}`
-  );
-
-  console.log(
-    `model: ${meta.model}`
-  );
-
-  console.log(
-    `latency_ms: ${meta.latency_ms}`
-  );
-
-  console.log(
-    `wall_time_ms: ${Math.round(
-      extractionWallTime
-    )}`
+    `model: ${result.meta.model}`
   );
 
   console.log(
     `fallback_reason: ${
-      meta.fallback_reason ?? 'none'
+      result.meta.fallback_reason ?? 'none'
     }`
   );
 
   console.log(
-    `attempts: ${meta.attempts}`
+    `latency_ms: ${result.meta.latency_ms}`
   );
-
-  // --------------------------------------------------
-  // FORMATS
-  // --------------------------------------------------
-
-  const config = {
-    audience:
-      'senior government officials',
-    tone: 'formal' as const,
-    detail: 'medium' as const,
-    language: 'en' as const,
-  };
 
   console.log(
-    '\n=== FORMAT MEASUREMENTS ==='
+    `wall_time_ms: ${wallTime}`
   );
-
-  for (
-    const format of formatsToRun
-  ) {
-    const start =
-      performance.now();
-
-    const result =
-      await engine.runFormat({
-        canonical,
-        spans: source.spans,
-        format,
-        config,
-        classification:
-          source.classification,
-      });
-
-      const grounding =
-        result.grounding.total_claims > 0
-          ? result.grounding.grounded_count /
-            result.grounding.total_claims
-          : 1;
-
-    const wallTime =
-      performance.now() -
-      start;
-
-    const groundingClaims =
-      result.verification;
-
-    const totalFindings =
-      groundingClaims.fixes.length +
-      groundingClaims.open_issues.length;
-
-    console.log(
-      `\n${format}:`
-    );
-    console.log(
-            `  grounding: ${grounding.toFixed(2)}`
-          );
-    console.log(
-      `  wall_time_ms: ${Math.round(
-        wallTime
-      )}`
-    );
-
-    console.log(
-      `  passed: ${groundingClaims.passed}`
-    );
-
-    console.log(
-      `  revised: ${groundingClaims.revised}`
-    );
-
-    console.log(
-      `  fixes: ${groundingClaims.fixes.length}`
-    );
-
-    console.log(
-      `  open_issues: ${groundingClaims.open_issues.length}`
-    );
-
-    console.log(
-      `  total_findings: ${totalFindings}`
-    );
-  }
-
-} finally {
-  await redis.quit();
 }
+
+/*
+ * --------------------------------------------------
+ * Close Redis connection
+ * --------------------------------------------------
+ */
+
+await redis.quit();

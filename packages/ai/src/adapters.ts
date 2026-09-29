@@ -30,9 +30,15 @@ export class TransportError extends Error {
 }
 
 export class RateLimitError extends Error {
-  constructor(message: string) {
+  retryAfterMs?: number;
+
+  constructor(
+    message: string,
+    retryAfterMs?: number
+  ) {
     super(message);
     this.name = 'RateLimitError';
+    this.retryAfterMs = retryAfterMs;
   }
 }
 
@@ -104,13 +110,23 @@ export class GroqAdapter implements LLMAdapter {
       };
     } catch (error: any) {
       if (
-        error?.status === 429 ||
-        error?.code === 'rate_limit_exceeded'
-      ) {
-        throw new RateLimitError(
-          error?.message ?? 'Groq rate limit exceeded'
-        );
-      }
+  error?.status === 429 ||
+  error?.code === 'rate_limit_exceeded'
+) {
+  const retryAfter =
+    error?.headers?.['retry-after'] ??
+    error?.headers?.get?.('retry-after');
+
+  const retryAfterMs = retryAfter
+    ? Number(retryAfter) * 1000
+    : undefined;
+
+  throw new RateLimitError(
+    error?.message ??
+      'Groq rate limit exceeded',
+    retryAfterMs
+  );
+}
 
       if (error instanceof TransportError) {
         throw error;
