@@ -3,11 +3,15 @@ import type { Canonical } from '@ps154/shared';
 
 const SEVERITY: Record<string, string> = {
   critical: 'bg-red-700 text-white', high: 'bg-orange-600 text-white',
-  medium: 'bg-amber-400 text-black', low: 'bg-slate-300 text-black', unknown: 'bg-slate-100 text-slate-700',
+  medium: 'bg-amber-400 text-amber-950', low: 'bg-slate-200 text-slate-800', unknown: 'bg-slate-100 text-slate-600',
 };
 
 export function SeverityPill({ value }: { value: string }) {
-  return <span className={`rounded px-2 py-0.5 text-xs font-bold uppercase ${SEVERITY[value]}`}>{value}</span>;
+  return (
+    <span className={`inline-block shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold uppercase leading-5 tracking-wider ${SEVERITY[value] ?? SEVERITY.unknown}`}>
+      {value}
+    </span>
+  );
 }
 
 export function FactsPanel({ c }: { c: Canonical }) {

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2100" height="1080" viewBox="0 0 2100 1080" role="img" aria-label="AI engine flowchart">
+  <title>AI engine flowchart</title>
+  <desc>Ingest and split, extract the canonical object, build the prompt, route through the egress gate to Groq or Ollama, parse, verify with four deterministic checks, and repair at most once.</desc>
+  <rect width="2100" height="1080" fill="#FFFFFF"/>
+  <rect x="30" y="20" width="2040" height="265" rx="18" fill="#F7F9FB" stroke="#C7D3E0" stroke-width="2"/>
+  <rect x="30" y="20" width="46" height="265" rx="18" fill="#0F2B46"/>
+  <rect x="60" y="20" width="16" height="265" fill="#0F2B46"/>
+  <text x="53" y="152.5" transform="rotate(-90 53 152.5)" text-anchor="middle" dominant-baseline="central" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" font-weight="700" letter-spacing="1.5" fill="#FFFFFF">ONCE PER SOURCE</text>
+  <rect x="30" y="325" width="2040" height="285" rx="18" fill="#F7F9FB" stroke="#C7D3E0" stroke-width="2"/>
+  <rect x="30" y="325" width="46" height="285" rx="18" fill="#0F2B46"/>
+  <rect x="60" y="325" width="16" height="285" fill="#0F2B46"/>
+  <text x="53" y="467.5" transform="rotate(-90 53 467.5)" text-anchor="middle" dominant-baseline="central" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" font-weight="700" letter-spacing="1.5" fill="#FFFFFF">ROUTE + GENERATE</text>
+  <rect x="30" y="650" width="2040" height="360" rx="18" fill="#F7F9FB" stroke="#C7D3E0" stroke-width="2"/>
+  <rect x="30" y="650" width="46" height="360" rx="18" fill="#0F2B46"/>
+  <rect x="60" y="650" width="16" height="360" fill="#0F2B46"/>
+  <text x="53" y="830" transform="rotate(-90 53 830)" text-anchor="middle" dominant-baseline="central" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" font-weight="700" letter-spacing="1.5" fill="#FFFFFF">VERIFY + REPAIR ONCE</text>
+  <rect x="100" y="40" width="590" height="225" rx="14" fill="#FFFFFF" stroke="#94A7BA" stroke-width="2"/>
+  <text x="120" y="103.185" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#0F2B46">1  INGEST · SPLIT</text>
+  <text x="120" y="138.905" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">unpdf (per page) · mammoth · UTF-8, CRLF → LF</text>
+  <text x="120" y="166.625" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">Intl.Segmenter('sentence') → span_id, offsets, page</text>
+  <text x="120" y="194.345" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">SHA-256 source_hash · classification stored</text>
+  <text x="120" y="222.065" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">50 – 50,000 characters, else HTTP 400 / 413</text>
+  <rect x="780" y="40" width="590" height="225" rx="14" fill="#E6F2F5" stroke="#0E7490" stroke-width="3"/>
+  <text x="800" y="103.185" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#0B3B4A">2  EXTRACT · extractCanonical()</text>
+  <text x="800" y="138.905" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">source sits in the user role, one [span_id] per line</text>
+  <text x="800" y="166.625" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">z.toJSONSchema(Canonical) in the prompt</text>
+  <text x="800" y="194.345" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">safeParse, one retry that quotes the Zod issues</text>
+  <text x="800" y="222.065" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">keepKnownRefs() drops any span id the model invents</text>
+  <rect x="1460" y="40" width="590" height="225" rx="14" fill="#E6F2F5" stroke="#0E7490" stroke-width="3"/>
+  <text x="1480" y="103.185" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#0B3B4A">CANONICAL OBJECT · JSONB</text>
+  <text x="1480" y="138.905" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">severity · entities · events · affected_systems</text>
+  <text x="1480" y="166.625" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">indicators · key_facts (fact | inference)</text>
+  <text x="1480" y="194.345" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">recommendations — each item cites source_refs</text>
+  <text x="1480" y="222.065" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">stored once; formats read this, not the raw text</text>
+  <path d="M 690 152 L 765 152" fill="none" stroke="#5A6B7B" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="780,152 765,160 765,144" fill="#5A6B7B"/>
+  <path d="M 1370 152 L 1445 152" fill="none" stroke="#0E7490" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="1460,152 1445,160 1445,144" fill="#0E7490"/>
+  <path d="M 1825 265 L 1825 330" fill="none" stroke="#0E7490" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="1825,345 1817,330 1833,330" fill="#0E7490"/>
+  <text x="1808" y="311" text-anchor="end" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="18" font-style="italic" fill="#4A5A6B">worker loads sources.canonical</text>
+  <rect x="1600" y="345" width="450" height="245" rx="14" fill="#FFFFFF" stroke="#94A7BA" stroke-width="2"/>
+  <text x="1620" y="404.325" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#0F2B46">3  BUILD PROMPT</text>
+  <text x="1620" y="440.045" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">one system prompt per format:</text>
+  <text x="1620" y="467.76500000000004" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">advisory · executive summary · LinkedIn</text>
+  <text x="1620" y="495.48500000000007" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">system = rules + canonical + JSON Schema</text>
+  <text x="1620" y="523.205" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">user = audience · tone · detail · language</text>
+  <text x="1620" y="550.9250000000001" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#B45309">X thread, video package: not built yet</text>
+  <rect x="1120" y="345" width="400" height="245" rx="14" fill="#FDEDE6" stroke="#C2410C" stroke-width="4"/>
+  <text x="1140" y="404.325" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#7A2E0A">4  ROUTER · EGRESS GATE</text>
+  <text x="1140" y="440.045" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">restricted → Ollama  (policy)</text>
+  <text x="1140" y="467.76500000000004" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">INCR ratelimit:provider:cloud, 60 s</text>
+  <text x="1140" y="495.48500000000007" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">over CLOUD_RPM → Ollama  (rate_limit)</text>
+  <text x="1140" y="523.205" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">internal → Redactor masks the user</text>
+  <text x="1140" y="550.9250000000001" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">message: IP · URL · email · domain</text>
+  <rect x="580" y="345" width="460" height="105" rx="14" fill="#F3F0FF" stroke="#6D28D9" stroke-width="3"/>
+  <text x="600" y="375.905" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#3B1A7A">5a  GROQ · cloud</text>
+  <text x="600" y="411.625" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">llama-3.3-70b-versatile · temperature 0</text>
+  <text x="600" y="439.345" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">json_schema strict · 3 tries, 500·2ⁿ ms</text>
+  <rect x="580" y="485" width="460" height="105" rx="14" fill="#F3F0FF" stroke="#6D28D9" stroke-width="3"/>
+  <text x="600" y="515.905" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#3B1A7A">5b  OLLAMA · on the host</text>
+  <text x="600" y="551.625" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">qwen2.5:7b · num_ctx 8192 · format = schema</text>
+  <text x="600" y="579.345" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">180 s timeout · used for restricted + fallback</text>
+  <rect x="100" y="345" width="410" height="245" rx="14" fill="#FFFFFF" stroke="#94A7BA" stroke-width="2"/>
+  <text x="120" y="418.18499999999995" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#0F2B46">6  PARSE · VALIDATE</text>
+  <text x="120" y="453.905" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">parseModelJson() → outermost { }</text>
+  <text x="120" y="481.625" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">format schema .safeParse()</text>
+  <text x="120" y="509.345" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#B91C1C">invalid → FORMAT_INVALID</text>
+  <text x="120" y="537.065" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#B91C1C">schema failures get no repair</text>
+  <path d="M 1600 467 L 1535 467" fill="none" stroke="#5A6B7B" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="1520,467 1535,459 1535,475" fill="#5A6B7B"/>
+  <path d="M 1120 398 L 1055 398" fill="none" stroke="#6D28D9" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="1040,398 1055,390 1055,406" fill="#6D28D9"/>
+  <text x="1080" y="386" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="17" fill="#4A5A6B">cloud</text>
+  <path d="M 1120 537 L 1055 537" fill="none" stroke="#6D28D9" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="1040,537 1055,529 1055,545" fill="#6D28D9"/>
+  <text x="1080" y="525" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="17" fill="#4A5A6B">local</text>
+  <path d="M 810 450 L 810 470" fill="none" stroke="#C2410C" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="6 4"/>
+  <polygon points="810,485 802,470 818,470" fill="#C2410C"/>
+  <text x="826" y="473" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="17" fill="#C2410C">429 · 3 failures</text>
+  <path d="M 580 398 L 525 398" fill="none" stroke="#5A6B7B" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="510,398 525,390 525,406" fill="#5A6B7B"/>
+  <path d="M 580 537 L 525 537" fill="none" stroke="#5A6B7B" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="510,537 525,529 525,545" fill="#5A6B7B"/>
+  <path d="M 250 590 L 250 705" fill="none" stroke="#0E7490" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="250,720 242,705 258,705" fill="#0E7490"/>
+  <text x="270" y="636" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="18" font-style="italic" fill="#4A5A6B">schema-valid artefact</text>
+  <rect x="100" y="720" width="300" height="210" rx="14" fill="#FFFFFF" stroke="#94A7BA" stroke-width="2"/>
+  <text x="120" y="789.545" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#0F2B46">7  CLAIM IDS</text>
+  <text x="120" y="825.265" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">collectClaims()</text>
+  <text x="120" y="852.985" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">c1 … cn, reading order</text>
+  <text x="120" y="880.705" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#3B4A5A">fact | inference | framing</text>
+  <rect x="480" y="700" width="430" height="280" rx="14" fill="#E6F2F5" stroke="#0E7490" stroke-width="3"/>
+  <text x="500" y="776.8249999999999" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#0B3B4A">8  VERIFY · verifyClaims()</text>
+  <text x="500" y="812.545" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">① every source_ref exists</text>
+  <text x="500" y="840.265" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">② lexical grounding ≥ 0.5</text>
+  <text x="500" y="867.985" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">③ identifiers ⊆ cited span</text>
+  <text x="500" y="895.705" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#2F5560">④ source hedges preserved</text>
+  <text x="500" y="923.4250000000001" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#0E7490">plain code · no model call</text>
+  <polygon points="1095,765 1200,835 1095,905 990,835" fill="#FDEDE6" stroke="#C2410C" stroke-width="4"/>
+  <text x="1095" y="845.125" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#7A2E0A">9  findings?</text>
+  <rect x="1280" y="700" width="430" height="280" rx="14" fill="#FDEDE6" stroke="#C2410C" stroke-width="4"/>
+  <text x="1300" y="776.8249999999999" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#7A2E0A">10  REPAIR · ONE call</text>
+  <text x="1300" y="812.545" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">reviseClaims(): failing claims</text>
+  <text x="1300" y="840.265" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">+ their findings + only their</text>
+  <text x="1300" y="867.985" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">cited spans, strict JSON schema</text>
+  <text x="1300" y="895.705" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">replaceClaimNode(), then re-verify</text>
+  <text x="1300" y="923.4250000000001" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#B91C1C">no second repair, ever</text>
+  <rect x="1790" y="715" width="260" height="110" rx="14" fill="#E7F6EC" stroke="#15803D" stroke-width="3"/>
+  <text x="1810" y="762.265" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#14532D">READY</text>
+  <text x="1810" y="797.985" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#1F5A36">passed · fixes[] kept</text>
+  <rect x="1790" y="860" width="260" height="110" rx="14" fill="#FFF4DB" stroke="#B45309" stroke-width="3"/>
+  <text x="1810" y="907.265" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#78350F">FLAGGED</text>
+  <text x="1810" y="942.985" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A4A1A">open_issues[] → reviewer</text>
+  <path d="M 400 825 L 465 825" fill="none" stroke="#5A6B7B" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="480,825 465,833 465,817" fill="#5A6B7B"/>
+  <path d="M 910 835 L 975 835" fill="none" stroke="#0E7490" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="990,835 975,843 975,827" fill="#0E7490"/>
+  <path d="M 1200 835 L 1265 835" fill="none" stroke="#C2410C" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="1280,835 1265,843 1265,827" fill="#C2410C"/>
+  <text x="1240" y="822" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#C2410C">yes</text>
+  <path d="M 1095 765 L 1095 682 L 1920 682 L 1920 700" fill="none" stroke="#15803D" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="1920,715 1912,700 1928,700" fill="#15803D"/>
+  <text x="1500" y="674" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#15803D">no findings</text>
+  <path d="M 1710 770 L 1775 770" fill="none" stroke="#15803D" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="1790,770 1775,778 1775,762" fill="#15803D"/>
+  <text x="1750" y="760" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="17" fill="#15803D">clean</text>
+  <path d="M 1710 915 L 1775 915" fill="none" stroke="#B45309" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="1790,915 1775,923 1775,907" fill="#B45309"/>
+  <text x="1750" y="905" text-anchor="middle" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="17" fill="#B45309">fails</text>
+  <rect x="100" y="1032" width="22" height="22" rx="5" fill="#E6F2F5" stroke="#0E7490" stroke-width="3"/>
+  <text x="132" y="1050" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="19" fill="#4A5A6B">deterministic code</text>
+  <rect x="373" y="1032" width="22" height="22" rx="5" fill="#FDEDE6" stroke="#C2410C" stroke-width="3"/>
+  <text x="405" y="1050" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="19" fill="#4A5A6B">policy / decision</text>
+  <rect x="635.5" y="1032" width="22" height="22" rx="5" fill="#F3F0FF" stroke="#6D28D9" stroke-width="3"/>
+  <text x="667.5" y="1050" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="19" fill="#4A5A6B">model call</text>
+  <rect x="824.5" y="1032" width="22" height="22" rx="5" fill="#E7F6EC" stroke="#15803D" stroke-width="3"/>
+  <text x="856.5" y="1050" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="19" fill="#4A5A6B">ready</text>
+  <rect x="961" y="1032" width="22" height="22" rx="5" fill="#FFF4DB" stroke="#B45309" stroke-width="3"/>
+  <text x="993" y="1050" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="19" fill="#4A5A6B">flagged</text>
+  <text x="2050" y="1050" text-anchor="end" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="19" fill="#4A5A6B">steps 1–2 run in the API · steps 3–10 in a BullMQ worker · one job per format · 3 in flight</text>
+</svg>
