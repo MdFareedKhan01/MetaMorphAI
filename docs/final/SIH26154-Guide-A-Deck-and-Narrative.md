@@ -187,7 +187,7 @@ Six slides, in the order recent templates use. Wording in quotation marks goes o
 
 - "A sealed audit log: each entry carries the hash of the one before it, so a changed record is detected."
 
-**Footer:** "TypeScript end to end — React, Express, BullMQ, PostgreSQL, Redis · Gemini in the cloud · Ollama on the device."
+**Footer:** "TypeScript end to end — React, Express, BullMQ, PostgreSQL, Redis · Groq in the cloud · Ollama on the device."
 
 *Speaker notes:* "The model is one component. Around it is a pipeline: understand the source once, write every format from the same facts, check every sentence in code, and prove it. Routing decisions are made by code, not by a model, because in intelligence work the document itself can be hostile."
 
@@ -234,7 +234,7 @@ Six slides, in the order recent templates use. Wording in quotation marks goes o
 
 - Adjacent products: Adobe GenStudio, Canva Magic Write, ChatGPT. They generate; none traces a sentence to its source.
 
-- Tools: Gemini API, Ollama, BullMQ, PostgreSQL, Redis.
+- Tools: Groq API, Ollama, BullMQ, PostgreSQL, Redis.
 
 Open each reference yourself before citing it, and use the title exactly as the source gives it.
 

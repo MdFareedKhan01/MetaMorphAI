@@ -341,7 +341,7 @@ it proves.</p>
   end
   ING --&gt; X
   WK --&gt; G
-  RT --&gt;|public, internal| CL[(Gemini)]
+  RT --&gt;|public, internal| CL[(Groq)]
   RT --&gt;|restricted, fallback| LO[(Ollama)]
   V --&gt; OUT[Verified artefact]</pre>
 <p>Everything inside the right-hand box is yours. B owns what feeds it
@@ -540,7 +540,7 @@ day, never from the gate.</p>
 <td>Setup (Step 0). Hour-zero schemas with the team (Step 1). Adapters
 and router (Step 2). Extraction prompt (Step 3)</td>
 <td><code>npm run try -- samples/demo-incident.md public</code> prints a
-valid canonical object from Gemini, and the same with
+valid canonical object from Groq, and the same with
 <code>restricted</code> prints one from Ollama</td>
 </tr>
 <tr>
@@ -591,7 +591,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> pull qwen2.5:3b     <span class="co"># CPU-only laptop</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> run qwen2.5:7b <span class="st">&quot;Reply with the JSON {</span><span class="dt">\&quot;</span><span class="st">ok</span><span class="dt">\&quot;</span><span class="st">: true} and nothing else.&quot;</span></span></code></pre></div>
 <ol start="3" type="1">
-<li><strong>A Gemini API key</strong> from Google AI Studio. The free
+<li><strong>A Groq API key</strong> from Groq Console. The free
 tier is enough for development. Note its requests-per-minute limit:
 <code>CLOUD_RPM</code> must stay under it.</li>
 <li><strong>The repo, running.</strong> The same first-time commands as
@@ -609,8 +609,8 @@ Saturday.</p>
 commit this file; it is ignored by git. Fill these:</li>
 </ol>
 <div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">GEMINI_API_KEY</span><span class="op">=</span>your-key</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">CLOUD_MODEL</span><span class="op">=</span>gemini-flash-latest   <span class="co"># alias from the official SDK README</span></span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">GROQ_API_KEY</span><span class="op">=</span>your-key</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">CLOUD_MODEL</span><span class="op">=</span>llama-3.3-70b-versatile   <span class="co"># alias from the official SDK README</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="va">CLOUD_RPM</span><span class="op">=</span>10</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="va">OLLAMA_URL</span><span class="op">=</span>http://localhost:11434</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="va">LOCAL_MODEL</span><span class="op">=</span>qwen2.5:7b</span>
@@ -641,7 +641,7 @@ by switching the rules off. If a PR of yours is urgent and nobody is
 free, ask in the team chat; one approval takes a minute</label></li>
 </ul>
 <p><strong>Pin the cloud model before the demo.</strong>
-<code>gemini-flash-latest</code> follows Google's newest Flash model.
+<code>llama-3.3-70b-versatile</code> follows Groq's newest Flash model.
 That is convenient on Friday and risky on stage. The adapter in Step 2
 logs the exact model version each response came from; on Monday, put
 that exact id in <code>CLOUD_MODEL</code>.</p>
@@ -830,7 +830,7 @@ It decides cloud or local, masks internal sources, retries network
 failures and falls back. Get it right on Friday and the sovereignty
 claim in the deck is true by construction.</p>
 <p><strong>The package already exists.</strong> <code>packages/ai</code>
-is <code>@ps154/ai</code>, with <code>@google/genai</code>,
+is <code>@ps154/ai</code>, with <code>groq-sdk</code>,
 <code>ioredis</code>, <code>dotenv</code> and <code>zod</code> 4
 installed, a <code>tsconfig.json</code> covering <code>src/</code>,
 <code>scripts/</code> and <code>test/</code>, and
@@ -846,8 +846,8 @@ class="sourceCode ts"><code class="sourceCode typescript"><span id="cb10-1"><a h
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { z } <span class="im">from</span> <span class="st">&#39;zod&#39;</span><span class="op">;</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">const</span> env <span class="op">=</span> z<span class="op">.</span><span class="fu">object</span>({</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  GEMINI_API_KEY<span class="op">:</span> z<span class="op">.</span><span class="fu">string</span>()<span class="op">.</span><span class="fu">default</span>(<span class="st">&#39;&#39;</span>)<span class="op">,</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  CLOUD_MODEL<span class="op">:</span> z<span class="op">.</span><span class="fu">string</span>()<span class="op">.</span><span class="fu">default</span>(<span class="st">&#39;gemini-flash-latest&#39;</span>)<span class="op">,</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  GROQ_API_KEY<span class="op">:</span> z<span class="op">.</span><span class="fu">string</span>()<span class="op">.</span><span class="fu">default</span>(<span class="st">&#39;&#39;</span>)<span class="op">,</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  CLOUD_MODEL<span class="op">:</span> z<span class="op">.</span><span class="fu">string</span>()<span class="op">.</span><span class="fu">default</span>(<span class="st">&#39;llama-3.3-70b-versatile&#39;</span>)<span class="op">,</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  CLOUD_RPM<span class="op">:</span> z<span class="op">.</span><span class="at">coerce</span><span class="op">.</span><span class="fu">number</span>()<span class="op">.</span><span class="fu">int</span>()<span class="op">.</span><span class="fu">positive</span>()<span class="op">.</span><span class="fu">default</span>(<span class="dv">10</span>)<span class="op">,</span></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  CLOUD_TIMEOUT_MS<span class="op">:</span> z<span class="op">.</span><span class="at">coerce</span><span class="op">.</span><span class="fu">number</span>()<span class="op">.</span><span class="fu">int</span>()<span class="op">.</span><span class="fu">default</span>(<span class="dv">60_000</span>)<span class="op">,</span></span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  OLLAMA_URL<span class="op">:</span> z<span class="op">.</span><span class="fu">string</span>()<span class="op">.</span><span class="fu">default</span>(<span class="st">&#39;http://localhost:11434&#39;</span>)<span class="op">,</span></span>
@@ -861,7 +861,7 @@ class="sourceCode ts"><code class="sourceCode typescript"><span id="cb10-1"><a h
 <p><strong><code>packages/ai/src/adapters.ts</code></strong> — two
 adapters behind one interface (NFR-12).</p>
 <div class="sourceCode" id="cb11"><pre
-class="sourceCode ts"><code class="sourceCode typescript"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { GoogleGenAI } <span class="im">from</span> <span class="st">&#39;@google/genai&#39;</span><span class="op">;</span></span>
+class="sourceCode ts"><code class="sourceCode typescript"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { Groq } <span class="im">from</span> <span class="st">&#39;groq-sdk&#39;</span><span class="op">;</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="im">type</span> { Classification } <span class="im">from</span> <span class="st">&#39;@ps154/shared&#39;</span><span class="op">;</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { env } <span class="im">from</span> <span class="st">&#39;./env&#39;</span><span class="op">;</span></span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -880,7 +880,7 @@ class="sourceCode ts"><code class="sourceCode typescript"><span id="cb11-1"><a h
 <span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="bu">Promise</span><span class="op">.</span><span class="fu">race</span>([p<span class="op">,</span> <span class="kw">new</span> <span class="bu">Promise</span><span class="op">&lt;</span><span class="dt">never</span><span class="op">&gt;</span>((_<span class="op">,</span> reject) <span class="kw">=&gt;</span></span>
 <span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    <span class="pp">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="fu">reject</span>(<span class="kw">new</span> <span class="fu">TransportError</span>(<span class="vs">`timed out after </span><span class="sc">${</span>ms<span class="sc">}</span><span class="vs"> ms`</span>))<span class="op">,</span> ms))])<span class="op">;</span></span>
 <span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> gemini <span class="op">=</span> <span class="kw">new</span> <span class="fu">GoogleGenAI</span>({ apiKey<span class="op">:</span> env<span class="op">.</span><span class="at">GEMINI_API_KEY</span> })<span class="op">;</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> groq <span class="op">=</span> <span class="kw">new</span> <span class="fu">Groq</span>({ apiKey<span class="op">:</span> env<span class="op">.</span><span class="at">GROQ_API_KEY</span> })<span class="op">;</span></span>
 <span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">const</span> cloud<span class="op">:</span> LLMAdapter <span class="op">=</span> {</span>
 <span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>  <span class="kw">async</span> <span class="fu">generate</span>(req) {</span>
@@ -891,7 +891,7 @@ class="sourceCode ts"><code class="sourceCode typescript"><span id="cb11-1"><a h
 <span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>    }</span>
 <span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> t0 <span class="op">=</span> <span class="bu">Date</span><span class="op">.</span><span class="fu">now</span>()<span class="op">;</span></span>
 <span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> {</span>
-<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>      <span class="kw">const</span> res <span class="op">=</span> <span class="cf">await</span> <span class="fu">withTimeout</span>(gemini<span class="op">.</span><span class="at">models</span><span class="op">.</span><span class="fu">generateContent</span>({</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>      <span class="kw">const</span> res <span class="op">=</span> <span class="cf">await</span> <span class="fu">withTimeout</span>(groq<span class="op">.</span><span class="at">models</span><span class="op">.</span><span class="fu">generateContent</span>({</span>
 <span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>        model<span class="op">:</span> env<span class="op">.</span><span class="at">CLOUD_MODEL</span><span class="op">,</span></span>
 <span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>        contents<span class="op">:</span> req<span class="op">.</span><span class="at">user</span><span class="op">,</span></span>
 <span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>        config<span class="op">:</span> { systemInstruction<span class="op">:</span> req<span class="op">.</span><span class="at">system</span><span class="op">,</span> temperature<span class="op">:</span> <span class="fl">0.2</span><span class="op">,</span></span>
@@ -935,11 +935,11 @@ class="sourceCode ts"><code class="sourceCode typescript"><span id="cb11-1"><a h
 <span id="cb11-72"><a href="#cb11-72" aria-hidden="true" tabindex="-1"></a>             model<span class="op">:</span> env<span class="op">.</span><span class="at">LOCAL_MODEL</span><span class="op">,</span> latency_ms<span class="op">:</span> <span class="bu">Date</span><span class="op">.</span><span class="fu">now</span>() <span class="op">-</span> t0 }<span class="op">;</span></span>
 <span id="cb11-73"><a href="#cb11-73" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
 <span id="cb11-74"><a href="#cb11-74" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
-<p><code>GoogleGenAI</code>, <code>generateContent</code>,
+<p><code>Groq</code>, <code>generateContent</code>,
 <code>response.text</code> and the <code>status</code> field on API
 errors are as shown in the SDK's official README. If TypeScript flags a
 <code>config</code> field, check the SDK's
-<code>GenerateContentConfig</code> type: Gemini's structured-output
+<code>GenerateContentConfig</code> type: Groq's structured-output
 options have been renamed between versions. Nothing here depends on them
 — the schema travels in the prompt and Zod validates the reply.</p>
 <p><strong><code>packages/ai/src/redact.ts</code></strong> — the
@@ -1058,7 +1058,7 @@ class="sourceCode ts"><code class="sourceCode typescript"><span id="cb13-1"><a h
 <td><code>rate_limit</code></td>
 </tr>
 <tr>
-<td>Gemini answers 429</td>
+<td>Groq answers 429</td>
 <td>Local</td>
 <td><code>rate_limit</code></td>
 </tr>
@@ -2439,7 +2439,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb45-1"><a href=
 <p><strong>2. Commit as you go.</strong> Small commits whose messages
 say what changed: <code>ai: hedge check on fact claims (FR-42)</code>.
 Stage your own folders by name, never everything, so your
-<code>.env</code> with the Gemini key can never slip in:</p>
+<code>.env</code> with the Groq key can never slip in:</p>
 <div class="sourceCode" id="cb46"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> status</span>
 <span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add packages/ai samples</span>
@@ -2664,7 +2664,7 @@ prompt</td>
 <code>CLOUD_RPM</code> within your quota</td>
 </tr>
 <tr>
-<td>Gemini returns 400</td>
+<td>Groq returns 400</td>
 <td>A <code>config</code> field your SDK version rejects</td>
 <td>Remove <code>responseMimeType</code>; the prompt already demands
 JSON</td>
@@ -2724,12 +2724,12 @@ uncommitted files</td>
 </table>
 <h3 id="references">References</h3>
 <ul>
-<li><a href="https://github.com/googleapis/js-genai">Google Gen AI SDK
+<li><a href="https://github.com/groq/groq-typescript">Groq JavaScript SDK
 for JavaScript — README</a>: client, <code>generateContent</code>,
 <code>response.text</code>, <code>ApiError.status</code>, the
-<code>gemini-flash-latest</code> alias.</li>
+<code>llama-3.3-70b-versatile</code> alias.</li>
 <li><a
-href="https://ai.google.dev/gemini-api/docs/structured-output">Gemini
+href="https://console.groq.com/docs/structured-outputs">Groq
 structured output</a>: supported JSON Schema keywords.</li>
 <li><a href="https://zod.dev/json-schema">Zod — JSON Schema</a>:
 <code>z.toJSONSchema</code>, Draft 2020-12 by default.</li>

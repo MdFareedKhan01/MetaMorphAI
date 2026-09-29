@@ -6,6 +6,10 @@ import { Canonical } from './canonical';
 import { Verification } from './verification';
 
 export const LoginRequest = z.object({ name: z.string(), password: z.string() });
+export const SignupRequest = z.object({
+  name: z.string().trim().min(3).max(80),
+  password: z.string().min(8).max(128),
+});
 export const PasteSource = z.object({ text: z.string(), classification: Classification });
 
 export const SourceRecord = z.object({

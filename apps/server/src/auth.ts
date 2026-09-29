@@ -1,7 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { LoginRequest } from '@ps154/shared';
+import { LoginRequest, SignupRequest } from '@ps154/shared';
 import { prisma } from './db';
 import { env } from './env';
 
@@ -10,6 +10,25 @@ export interface AuthUser { id: string; name: string; role: Role }
 declare global { namespace Express { interface Request { user?: AuthUser } } }
 
 export const authRouter = Router();
+
+authRouter.post('/signup', async (req, res) => {
+  const { name, password } = SignupRequest.parse(req.body);
+  const password_hash = await bcrypt.hash(password, 10);
+
+  try {
+    const user = await prisma.user.create({
+      data: { name, role: 'operator', password_hash },
+    });
+    const payload: AuthUser = { id: user.id, name: user.name, role: 'operator' };
+    res.status(201).json({ token: jwt.sign(payload, env.JWT_SECRET, { expiresIn: '12h' }), user: payload });
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      res.status(409).json({ error: 'That name is already registered' });
+      return;
+    }
+    throw error;
+  }
+});
 
 authRouter.post('/login', async (req, res) => {
   const { name, password } = LoginRequest.parse(req.body);

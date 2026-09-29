@@ -122,7 +122,7 @@ Verified after the change: the audit log records `model=offline-stub (no model r
 
 Two further repo bugs were fixed in the same commit:
 
-- `.env.example` configured `GEMINI_API_KEY` and `gemini-flash-latest` while the engine reads
+- `.env.example` configured `GROQ_API_KEY` and `llama-3.3-70b-versatile` while the engine reads
   `GROQ_API_KEY` and defaults to `llama-3.3-70b-versatile`. A fresh clone could not reach a
   model, and would have silently landed on the stub.
 - `apps/server/package.json` declared `dependencies` twice; JSON keeps the last, so the first
@@ -180,7 +180,7 @@ conversational pace. Either pre-record it, or use the smallest viable local mode
 | 4 | Delete `apps/web/src/shared-temp.ts`, import from `@ps154/shared`, reconcile any shape differences | C |
 | 5 | Take the six screenshots — the UI runs, and the Gallery has an offline provenance demo that needs no backend | C |
 | 6 | Deck still claims six generation parameters (code has four) and seven artefact types (code has five) | A |
-| 7 | Deck slide 3 still names Gemini; the engine uses Groq | A |
+| 7 | Deck slide 3 still names Groq; the engine uses Groq | A |
 | 8 | `main` is still unprotected | D |
 
 Items 6 and 7 were raised on 27 September and are unchanged.

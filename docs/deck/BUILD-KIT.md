@@ -27,7 +27,7 @@ product is pitched against, and a judge with the repo open can check all three.
 | --- | --- | --- |
 | Slide 2: "**Six** generation parameters — audience, tone, language, detail, objective, style" | `packages/shared/src/config.ts` has **four**: audience, tone, detail, language | Either Fareed adds `objective` and `style` today, or **change the slide to four** and drop those two words |
 | Slide 2: "One source, **seven** artefact types … all generated together" | `FormatId` has **five**: advisory, executive_summary, linkedin_post, x_thread, video_package | Say "**five artefact types today, seven specified**". Presentation and infographic are stretch, not built |
-| Slide 3 diagram: "CLOUD, **GEMINI**" | `packages/ai/src/adapters.ts` imports `groq-sdk` and exports `new GroqAdapter()` | Change the deck to **Groq**, and get the exact model id from Fareed. Also tell B/D that `.env.example` still says `GEMINI_API_KEY` — it is stale |
+| Slide 3 diagram: "CLOUD, **GROQ**" | `packages/ai/src/adapters.ts` imports `groq-sdk` and exports `new GroqAdapter()` | Keep the deck and environment setup aligned with **Groq** and `GROQ_API_KEY` |
 
 **Internal inconsistency to fix while you are there:** the slide 2 strip says "TRANSFORM —
 5 formats, one source" but The Resolution says seven, and "One index, not five prompts"
@@ -234,7 +234,7 @@ verify) → PROVIDERS (cloud, on-device, cache). Highlight the worker box in the
 - *The worker holds the only path out of the host. That one arrow is what the rule governs — not a setting a user can flip.*
 
 **Tech stack strip:** TypeScript end to end · React + Vite · Express 5 · BullMQ · Redis ·
-PostgreSQL + Prisma · Zod schemas shared by client and server · Gemini in the cloud ·
+PostgreSQL + Prisma · Zod schemas shared by client and server · Groq in the cloud ·
 Ollama on the device
 
 ### Slide 4 — Feasibility and viability
@@ -315,11 +315,11 @@ shape, without a single fact drifting on the way.
 - README with setup instructions — in the repository root
 - Demo video, under two minutes — *[link]*
 
-**TOOLS AND MODELS** — Gemini API · Ollama with an open local model · TypeScript · React ·
+**TOOLS AND MODELS** — Groq API · Ollama with an open local model · TypeScript · React ·
 Express · BullMQ · Redis · PostgreSQL · Prisma · Zod
 
 > Open every standard yourself before citing it, and use the title exactly as the source
-> gives it. Replace "Gemini API" with the exact model version once Fareed reports which one
+> gives it. Replace "Groq API" with the exact model version once Fareed reports which one
 > ran on the day.
 
 ---

@@ -4,21 +4,24 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router';
 import './index.css';
 import { getToken } from './api';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import Ingest from './pages/Ingest';
 import Confirm from './pages/Confirm';
 import Workspace from './pages/Workspace';
 import Gallery from './pages/Gallery';
+import AppShell from './components/AppShell';
 
 function Guard({ children }: { children: ReactNode }) {
   return getToken() ? children : <Navigate to="/login" replace />;
 }
 
 const router = createBrowserRouter([
-  { path: '/login', element: <Login /> },
-  { path: '/', element: <Guard><Ingest /></Guard> },
-  { path: '/sources/:id', element: <Guard><Confirm /></Guard> },
-  { path: '/batches/:id', element: <Guard><Workspace /></Guard> },
-  { path: '/gallery', element: <Gallery /> },
+  { path: '/login', element: <AppShell><Login /></AppShell> },
+  { path: '/signup', element: <AppShell><Signup /></AppShell> },
+  { path: '/', element: <AppShell><Guard><Ingest /></Guard></AppShell> },
+  { path: '/sources/:id', element: <AppShell><Guard><Confirm /></Guard></AppShell> },
+  { path: '/batches/:id', element: <AppShell><Guard><Workspace /></Guard></AppShell> },
+  { path: '/gallery', element: <AppShell><Gallery /></AppShell> },
 ]);
 
 // Alt+P toggles projector mode — for screenshots and the demo.

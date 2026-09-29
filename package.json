@@ -22,6 +22,7 @@
     "db:push": "prisma db push",
     "db:trigger": "prisma db execute --file prisma/append-only.sql --schema prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts",
+    "db:setup": "npm run db:push && npm run db:trigger && npm run db:seed",
     "seed:pack": "tsx apps/server/scripts/seed-pack.ts",
     "smoke": "tsx apps/server/scripts/smoke.ts",
     "try": "tsx packages/ai/scripts/try.ts",

@@ -25,7 +25,7 @@ flowchart LR
   end
   ING --> X
   WK --> G
-  RT -->|public, internal| CL[(Gemini)]
+  RT -->|public, internal| CL[(Groq)]
   RT -->|restricted, fallback| LO[(Ollama)]
   V --> OUT[Verified artefact]
 ```
@@ -80,7 +80,7 @@ Each day ends at a gate. If a gate slips, cut scope from the next day, never fro
 
 | Day | Build | Done means |
 | --- | --- | --- |
-| **Fri 25** | Setup (Step 0). Hour-zero schemas with the team (Step 1). Adapters and router (Step 2). Extraction prompt (Step 3) | `npm run try -- samples/demo-incident.md public` prints a valid canonical object from Gemini, and the same with `restricted` prints one from Ollama |
+| **Fri 25** | Setup (Step 0). Hour-zero schemas with the team (Step 1). Adapters and router (Step 2). Extraction prompt (Step 3) | `npm run try -- samples/demo-incident.md public` prints a valid canonical object from Groq, and the same with `restricted` prints one from Ollama |
 | **Sat 26** | Registry and the three prompts (Step 4). Claims and grounding (Step 5). Hand `createEngine` to B by noon | All three formats validate for the demo source, and every non-framing claim cites a real span |
 | **Sun 27** | Verifier (Step 6). Revision, cap and fault injection (Step 7). Test plan (Step 8) | AC-5, AC-15, AC-16 and AC-17 pass on B's running system. Numbers sent to A |
 | **Mon 28** | Freeze. Fix only what breaks the demo. Help A record the video | The demo runs three times in a row without anyone touching code |
@@ -107,7 +107,7 @@ ollama pull qwen2.5:3b     # CPU-only laptop
 ollama run qwen2.5:7b "Reply with the JSON {\"ok\": true} and nothing else."
 ```
 
-3. **A Gemini API key** from Google AI Studio. The free tier is enough for development. Note its requests-per-minute limit: `CLOUD_RPM` must stay under it.
+3. **A Groq API key** from Groq Console. The free tier is enough for development. Note its requests-per-minute limit: `CLOUD_RPM` must stay under it.
 4. **The repo, running.** The same first-time commands as everyone ([README](../../README.md), Guide B Step 1):
 
 ```bash
@@ -122,8 +122,8 @@ Docker is needed only once you test against B's worker, from Saturday.
 5. **Your entries in the root `.env`.** Never commit this file; it is ignored by git. Fill these:
 
 ```bash
-GEMINI_API_KEY=your-key
-CLOUD_MODEL=gemini-flash-latest   # alias from the official SDK README
+GROQ_API_KEY=your-key
+CLOUD_MODEL=llama-3.3-70b-versatile   # alias from the official SDK README
 CLOUD_RPM=10
 OLLAMA_URL=http://localhost:11434
 LOCAL_MODEL=qwen2.5:7b
@@ -141,7 +141,7 @@ DEMO_PERTURB=0
 - [ ] **Settings → Rules → Rulesets**: protect `main` — pull request with 1 approval, status check **typecheck, test, build** required, force pushes blocked. Free on a public repository. Until it is on, nothing stops a direct push to `main`
 - [ ] Never approve your own pull request by switching the rules off. If a PR of yours is urgent and nobody is free, ask in the team chat; one approval takes a minute
 
-**Pin the cloud model before the demo.** `gemini-flash-latest` follows Google's newest Flash model. That is convenient on Friday and risky on stage. The adapter in Step 2 logs the exact model version each response came from; on Monday, put that exact id in `CLOUD_MODEL`.
+**Pin the cloud model before the demo.** `llama-3.3-70b-versatile` follows Groq's newest Flash model. That is convenient on Friday and risky on stage. The adapter in Step 2 logs the exact model version each response came from; on Monday, put that exact id in `CLOUD_MODEL`.
 
 ## Step 1 — Hour zero: the schemas you own
 
@@ -327,7 +327,7 @@ B's `packages/shared/src/index.ts` re-exports every file; add yours to it. The t
 
 The router is the only way a prompt leaves `packages/ai`. It decides cloud or local, masks internal sources, retries network failures and falls back. Get it right on Friday and the sovereignty claim in the deck is true by construction.
 
-**The package already exists.** `packages/ai` is `@ps154/ai`, with `@google/genai`, `ioredis`, `dotenv` and `zod` 4 installed, a `tsconfig.json` covering `src/`, `scripts/` and `test/`, and `typecheck`, `test` and `test:watch` scripts. `src/index.ts` is a placeholder until Step 7. Add any further dependency from the repo root with `npm i <package> -w @ps154/ai` — never a bare `npm i` inside the package, which would create a second lockfile.
+**The package already exists.** `packages/ai` is `@ps154/ai`, with `groq-sdk`, `ioredis`, `dotenv` and `zod` 4 installed, a `tsconfig.json` covering `src/`, `scripts/` and `test/`, and `typecheck`, `test` and `test:watch` scripts. `src/index.ts` is a placeholder until Step 7. Add any further dependency from the repo root with `npm i <package> -w @ps154/ai` — never a bare `npm i` inside the package, which would create a second lockfile.
 
 **`packages/ai/src/env.ts`**
 
@@ -336,8 +336,8 @@ import 'dotenv/config';
 import { z } from 'zod';
 
 export const env = z.object({
-  GEMINI_API_KEY: z.string().default(''),
-  CLOUD_MODEL: z.string().default('gemini-flash-latest'),
+  GROQ_API_KEY: z.string().default(''),
+  CLOUD_MODEL: z.string().default('llama-3.3-70b-versatile'),
   CLOUD_RPM: z.coerce.number().int().positive().default(10),
   CLOUD_TIMEOUT_MS: z.coerce.number().int().default(60_000),
   OLLAMA_URL: z.string().default('http://localhost:11434'),
@@ -353,7 +353,7 @@ export const env = z.object({
 **`packages/ai/src/adapters.ts`** — two adapters behind one interface (NFR-12).
 
 ```ts
-import { GoogleGenAI } from '@google/genai';
+import { Groq } from 'groq-sdk';
 import type { Classification } from '@ps154/shared';
 import { env } from './env';
 
@@ -372,7 +372,7 @@ const withTimeout = <T>(p: Promise<T>, ms: number) =>
   Promise.race([p, new Promise<never>((_, reject) =>
     setTimeout(() => reject(new TransportError(`timed out after ${ms} ms`)), ms))]);
 
-const gemini = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+const groq = new Groq({ apiKey: env.GROQ_API_KEY });
 
 export const cloud: LLMAdapter = {
   async generate(req) {
@@ -383,7 +383,7 @@ export const cloud: LLMAdapter = {
     }
     const t0 = Date.now();
     try {
-      const res = await withTimeout(gemini.models.generateContent({
+      const res = await withTimeout(groq.models.generateContent({
         model: env.CLOUD_MODEL,
         contents: req.user,
         config: { systemInstruction: req.system, temperature: 0.2,
@@ -429,7 +429,7 @@ export const local: LLMAdapter = {
 };
 ```
 
-`GoogleGenAI`, `generateContent`, `response.text` and the `status` field on API errors are as shown in the SDK's official README. If TypeScript flags a `config` field, check the SDK's `GenerateContentConfig` type: Gemini's structured-output options have been renamed between versions. Nothing here depends on them — the schema travels in the prompt and Zod validates the reply.
+`Groq`, `generateContent`, `response.text` and the `status` field on API errors are as shown in the SDK's official README. If TypeScript flags a `config` field, check the SDK's `GenerateContentConfig` type: Groq's structured-output options have been renamed between versions. Nothing here depends on them — the schema travels in the prompt and Zod validates the reply.
 
 **`packages/ai/src/redact.ts`** — the internal tier (SRS §5.6). Identifying values are replaced with placeholders before the cloud call and restored after.
 
@@ -534,7 +534,7 @@ What the router does in each case. The full flowchart is SRS §9.1.
 | --- | --- | --- |
 | Source is restricted | Local only; the cloud adapter would refuse anyway | `policy` |
 | Rate counter above `CLOUD_RPM` | Local, without trying the cloud | `rate_limit` |
-| Gemini answers 429 | Local | `rate_limit` |
+| Groq answers 429 | Local | `rate_limit` |
 | Network error, timeout or 5xx, three times | Local | `network` |
 | Local model unreachable | Throws; the pipeline serves the cached pack (Step 7) | — |
 | Schema invalid after the revision | Not the router's concern: the task fails (Step 7) | — |
@@ -1724,7 +1724,7 @@ git pull
 git switch -c ai/verifier
 ```
 
-**2. Commit as you go.** Small commits whose messages say what changed: `ai: hedge check on fact claims (FR-42)`. Stage your own folders by name, never everything, so your `.env` with the Gemini key can never slip in:
+**2. Commit as you go.** Small commits whose messages say what changed: `ai: hedge check on fact claims (FR-42)`. Stage your own folders by name, never everything, so your `.env` with the Groq key can never slip in:
 
 ```bash
 git status
@@ -1752,7 +1752,7 @@ What your PRs must say:
 | `packages/shared` | Post in the team chat first; say which types changed | B and C, both |
 | `samples/` | That it is synthetic and labelled so. After Saturday, `demo-incident.md` does not change | B |
 
-Never put a key, a real report or a real indicator in a PR, not even in its description. If a key is ever pushed, revoke it in Google AI Studio at once: deleting the commit does not unpublish it.
+Never put a key, a real report or a real indicator in a PR, not even in its description. If a key is ever pushed, revoke it in Groq Console at once: deleting the commit does not unpublish it.
 
 **5. Review and merge.** A red cross from CI means `npm run check` fails on Linux: click *Details*, fix it, push again, and the PR updates itself. Once CI is green and a teammate has approved, press **Squash and merge**, then **Delete branch**. Then, locally:
 
@@ -1832,7 +1832,7 @@ const result = await engine.runFormat({
 | "The reply was not valid JSON" on most drafts | The model adds prose, or the prompt is too long | Lower temperature; shorten rules; check the schema is in the prompt |
 | Local output cut off mid-JSON | Context window too small | Raise `LOCAL_NUM_CTX` |
 | Everything routes local with `rate_limit` | `CLOUD_RPM` too low, or the counter never expires | `redis-cli GET ratelimit:provider:cloud`; raise `CLOUD_RPM` within your quota |
-| Gemini returns 400 | A `config` field your SDK version rejects | Remove `responseMimeType`; the prompt already demands JSON |
+| Groq returns 400 | A `config` field your SDK version rejects | Remove `responseMimeType`; the prompt already demands JSON |
 | Many `global_identifier` findings | Dates in a different format, or invented list numbers | Read the finding text; dates are a known Phase 1 limit |
 | Hedge findings on almost every claim | A hedge word in a heading or label span | Reword that line of the sample, or narrow the hedge list |
 | Grounding score near zero | The model invented span ids | Check the canonical object's refs; tighten universal rule 2 |
@@ -1845,6 +1845,6 @@ const result = await engine.runFormat({
 
 ### References
 
-- [Google Gen AI SDK for JavaScript — README](https://github.com/googleapis/js-genai): client, `generateContent`, `response.text`, `ApiError.status`, the `gemini-flash-latest` alias.
-- [Gemini structured output](https://ai.google.dev/gemini-api/docs/structured-output): supported JSON Schema keywords.
+- [Groq JavaScript SDK for JavaScript — README](https://github.com/groq/groq-typescript): client, `generateContent`, `response.text`, `ApiError.status`, the `llama-3.3-70b-versatile` alias.
+- [Groq structured output](https://console.groq.com/docs/structured-outputs): supported JSON Schema keywords.
 - [Zod — JSON Schema](https://zod.dev/json-schema): `z.toJSONSchema`, Draft 2020-12 by default.

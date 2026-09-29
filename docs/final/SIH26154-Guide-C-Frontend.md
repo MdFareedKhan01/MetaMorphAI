@@ -181,7 +181,7 @@ import type {
     "fixes": [ { "check": "identifier", "key": "identifier:42",
       "detail": "\"42 organisations were exposed\" cites span_6, which reads \"...37 organisations...\". 42 does not appear in the cited source." } ]
   },
-  "meta": { "provider": "cloud", "model": "gemini-flash", "fallback_reason": null,
+  "meta": { "provider": "cloud", "model": "groq-flash", "fallback_reason": null,
             "attempts": 2, "latency_ms": 8420, "perturbed": true },
   "claims": [],
   "content": {

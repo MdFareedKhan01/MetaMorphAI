@@ -39,7 +39,7 @@ function LiveBatch({ initial, source }: { initial: BatchView; source: SourceReco
 
   return (
     <SelectionContext.Provider value={{ active, select: setActive }}>
-      <main className="grid h-screen grid-cols-[2fr_3fr]">
+      <main className="grid h-[calc(100vh-65px)] grid-cols-[2fr_3fr] max-lg:h-auto max-lg:grid-cols-1">
         <section className="overflow-y-auto border-r p-6">
           {active && active.source_refs.length === 0 && (
             <p className="mb-3 rounded bg-amber-50 p-2 text-sm text-amber-900">

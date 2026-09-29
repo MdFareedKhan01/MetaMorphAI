@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { api, setToken } from '../api';
 
 export default function Login() {
@@ -24,6 +24,9 @@ export default function Login() {
       <input name="password" type="password" placeholder="Password" className="w-full rounded border px-3 py-2" />
       {error && <p className="text-sm text-red-700">{error}</p>}
       <button className="w-full rounded bg-slate-900 py-2 text-white">Sign in</button>
+      <p className="text-center text-sm text-slate-600">
+        Need an account? <Link className="font-medium text-slate-900 underline" to="/signup">Sign up</Link>
+      </p>
     </form>
   );
 }
