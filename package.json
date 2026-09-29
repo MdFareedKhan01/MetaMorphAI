@@ -27,6 +27,7 @@
     "smoke": "tsx apps/server/scripts/smoke.ts",
     "try": "tsx packages/ai/scripts/try.ts",
     "docs:html": "node docs/scripts/build-html.mjs",
+    "docs:figures": "node docs/figures/src/build.mjs docs/figures && node docs/figures/src/build-note.mjs docs/figures docs",
     "postinstall": "node scripts/postinstall.mjs",
     "try-revision": "tsx packages/ai/scripts/test-revision.ts"
   },

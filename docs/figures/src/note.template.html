@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MetaMorph-AI — Architecture Note</title>
+<style>
+  @page { size: A4; margin: 11mm 13mm 10mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font-family: "Segoe UI", Arial, Helvetica, sans-serif; font-size: 8.9pt; line-height: 1.34; color: #1B2A3A; }
+  header { background: #0F2B46; color: #fff; padding: 9px 14px 8px; border-radius: 6px; margin-bottom: 8px; }
+  header h1 { margin: 0; font-size: 17pt; letter-spacing: .3px; }
+  header p { margin: 2px 0 0; font-size: 8.4pt; color: #C7D6E4; }
+  h2 { font-size: 10.6pt; margin: 9px 0 3px; color: #0F2B46; border-bottom: 1.5px solid #0E7490; padding-bottom: 1px; }
+  p { margin: 3px 0; }
+  ul { margin: 3px 0 3px 15px; padding: 0; }
+  li { margin: 1.5px 0; }
+  b { color: #0F2B46; }
+  code { font-family: Consolas, "Cascadia Code", monospace; font-size: 8.1pt; background: #EEF3F7; padding: 0 2px; border-radius: 2px; }
+  figure { margin: 5px 0 2px; text-align: center; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 7.8pt; color: #4A5A6B; font-style: italic; margin-top: 1px; }
+  table { border-collapse: collapse; width: 100%; margin: 3px 0; font-size: 8.4pt; }
+  th, td { border: 1px solid #C7D3E0; padding: 2px 6px; vertical-align: top; text-align: left; }
+  th { background: #EEF3F7; color: #0F2B46; }
+  td.num, th.num { text-align: center; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .pagebreak { break-before: page; }
+  .note { font-size: 8.2pt; color: #4A5A6B; }
+  .keep { break-inside: avoid; }
+  footer { margin-top: 6px; font-size: 7.6pt; color: #4A5A6B; border-top: 1px solid #C7D3E0; padding-top: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>MetaMorph-AI — Architecture Note</h1>
+  <p>SIH26154 · Gen AI Platform for Automated Content Transformation · NTRO · Blockchain &amp; Cybersecurity · StrawHats · 120014 · 29 Sep 2026</p>
+</header>
+
+<h2>1  Problem and approach</h2>
+<p>An analyst writes one threat report; the sector CERT, ministry leadership and the public each need it in a different shape. Rewriting it by hand takes most of a working day, and every rewrite can quietly change a fact — <i>“consistent with a possible phishing campaign”</i> becomes <i>“was attacked by a phishing campaign”</i>, or <i>37</i> becomes <i>42</i>.</p>
+<p>MetaMorph-AI turns one trusted source into several audience-specific artefacts while keeping every sentence traceable to the passage it came from. It works in four moves: <b>understand</b> the source once into a cited fact index; <b>transform</b> each format from that index, never from the raw text; <b>verify</b> every claim in code; <b>prove</b> the result with click-to-source provenance, a tamper-evident log and a human approval.</p>
+
+<h2>2  System architecture</h2>
+<figure class="keep">
+  {{FIG1}}
+  <figcaption>Figure 1 — Five components. The API and the worker both call the same engine; every prompt leaves through one function, <code>router.call()</code>.</figcaption>
+</figure>
+<ul>
+  <li><b>Browser</b> (React 19, Vite 8): one independent state machine per artefact card, so one failure never blanks the page. Selecting any claim highlights its source sentence; progress arrives over a WebSocket that resumes from the last event after a drop.</li>
+  <li><b>API</b> (Express 5, Zod 4): JWT sessions, three roles, ingestion of text, PDF (<code>unpdf</code>, page-aware) and DOCX (<code>mammoth</code>), sentence spans via <code>Intl.Segmenter</code>. A batch returns <code>202</code> in milliseconds; the fact index is extracted inside the ingest request.</li>
+  <li><b>Queue and worker</b> (BullMQ 6, Redis 7): one job per artefact, three in flight. Progress goes to Redis Streams — not Pub/Sub — so a reconnecting browser replays what it missed.</li>
+  <li><b>PostgreSQL 16</b> (Prisma 6): sources, spans, the fact index, artefacts, claims and the hash-chained audit log.</li>
+  <li><b>One contract:</b> the same Zod schemas define every request, event and model output for the browser, the API and the engine — there is no hand-written mirror to drift.</li>
+</ul>
+
+<h2>3  The AI engine</h2>
+<figure class="keep">
+  {{FIG2}}
+  <figcaption>Figure 2 — From source to a ready or flagged artefact. Steps 1–2 run once per source; steps 3–8 run once per artefact.</figcaption>
+</figure>
+<p><b>Extraction</b> reads the source as delimited data in the user role and returns a fact index — severity, entities, events, systems, indicators, key facts (<i>fact</i> or <i>inference</i>) and recommendations — each item citing span ids. Any id the model invents is dropped. <b>Generation</b> uses one prompt and one schema per format (advisory, executive summary, LinkedIn post); every assertion is a claim node <code>{text, source_refs, status}</code>. Configuration (audience, tone, detail, language) is merged per format, so one artefact can be conversational while another stays formal.</p>
+<p><b>Routing</b> is decided in code before any call. <code>restricted</code> goes to the on-device model (Ollama, <code>qwen2.5:7b</code>). Otherwise the cloud model (Groq, <code>llama-3.3-70b-versatile</code>, temperature 0) is used, with three tries, falling back to Ollama on a rate limit or repeated failure. Output must satisfy the format’s JSON Schema.</p>
+<p><b>Verification is plain code — no second model.</b> Four checks run on every claim: its <i>source references exist</i>; its <i>lexical overlap</i> with the cited sentence is at least 0.5; every <i>number, CVE, IP, domain and hash</i> in it appears in the cited sentence; and any <i>hedge</i> in the cited sentence (<i>possibly, potentially, consistent with…</i>) survives. If anything fails, <b>exactly one</b> targeted repair call carries the specific findings and only the cited sentences; the claims are re-checked and a second repair is never made. What still fails is shown on the card as an open flag, and a reviewer approves or rejects. A hard cap of two model calls per artefact is enforced in code and tested.</p>
+
+<h2>4  Security and integrity</h2>
+<table class="keep">
+  <tr><th style="width:19%">Property</th><th>Mechanism</th></tr>
+  <tr><td><b>Sovereignty</b></td><td>The operator classifies each source <i>public</i>, <i>internal</i> or <i>restricted</i>. The check in <code>router.call()</code> runs before an adapter is chosen; restricted content is sent to the on-device model only.</td></tr>
+  <tr><td><b>Data, not instructions</b></td><td>Source text is delimited data in the user role; output is confined to a schema; injected text that reaches the output has no valid citation and is shown as <i>unverified</i>.</td></tr>
+  <tr><td><b>Access</b></td><td>bcrypt passwords, signed JWTs, operator / reviewer / admin roles enforced on each route. An operator cannot approve their own artefact (HTTP 403).</td></tr>
+  <tr><td><b>Tamper evidence</b></td><td>Each audit row stores SHA-256 over its content and its predecessor’s hash. A database trigger refuses <code>UPDATE</code> and <code>DELETE</code>; if a superuser bypasses it, <code>GET /audit/verify</code> names the first broken row. Demonstrated end to end.</td></tr>
+  <tr><td><b>Provenance</b></td><td>Spans are split once and never re-derived, so every claim keeps a stable link to its sentence and, for PDFs, its page.</td></tr>
+</table>
+
+<h2>5  Measured results</h2>
+<div class="cols">
+<div>
+<table class="keep">
+  <tr><th></th><th class="num">Cloud</th><th class="num">On-device</th></tr>
+  <tr><td>Extraction</td><td class="num">4 – 31 s</td><td class="num">127 – 195 s</td></tr>
+  <tr><td>Generation per format</td><td class="num">24 – 45 s</td><td class="num">87 – 131 s</td></tr>
+  <tr><td>Grounding score</td><td class="num">1.00</td><td class="num">0.88 – 1.00</td></tr>
+  <tr><td>Drafts needing a repair</td><td class="num">1 of 9</td><td class="num">5 of 9</td></tr>
+</table>
+<p class="note">Three runs per format, advisory / executive summary / LinkedIn post, measured by the AI owner on 28 September. Automated suite: 61 tests, all passing.</p>
+</div>
+<div>
+<p>The repair loop earns its place on the weaker model: on-device drafts were repaired five times as often. <b>“Five artefacts in under 60 seconds” remains a target</b> — no end-to-end batch has been timed. The grounding score measures citation overlap, not correctness; wrong numbers and dropped hedges are reported in <code>verification</code>, not in the score.</p>
+</div>
+</div>
+
+<h2>6  Current limits and next steps</h2>
+<ul>
+  <li><b>Formats:</b> advisory, executive summary and LinkedIn post are built end to end. X thread and video package are specified and selectable but return an unverified placeholder.</li>
+  <li><b>Masking:</b> for <i>internal</i> sources, identifiers are masked in the user message — which is the entire source during extraction. Extending this to the generation prompts is the next change.</li>
+  <li><b>Verification scope:</b> claim text is checked against cited sentences; severity, length and duration constraints are not yet checked in code.</li>
+  <li><b>Audit:</b> tamper-<i>evidence</i>, not tamper-proofing — deleting the newest rows is undetectable from inside the database. Anchoring the head hash externally (signed digest, C2PA manifest or permissioned ledger) is the roadmap; no blockchain runs in this system.</li>
+  <li><b>Resilience:</b> no offline cached-pack fallback yet, and review is available through the API with screens still to build.</li>
+</ul>
+
+<h2>7  Technology</h2>
+<p>TypeScript 6 · Node 22 · React 19 · Vite 8 · Tailwind 4 · Express 5 · <code>ws</code> · Zod 4 · BullMQ 6 · Redis 7 · PostgreSQL 16 · Prisma 6 · Groq (Llama 3.3 70B) · Ollama (Qwen 2.5 7B) · <code>unpdf</code> · <code>mammoth</code> · Turborepo · Vitest · GitHub Actions. Source and setup: <b>github.com/MdFareedKhan01/sih_ps154</b> — full detail in <code>docs/system-documentation.md</code>.</p>
+
+</body>
+</html>
