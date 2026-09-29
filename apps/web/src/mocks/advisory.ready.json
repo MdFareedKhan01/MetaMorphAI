@@ -5,15 +5,15 @@
   "effective_config": { "audience": "Sector CISOs", "tone": "formal", "detail": "medium", "language": "en" },
   "status": "ready",
   "version": 1,
-  "grounding_score": 0.94,
+  "grounding_score": 0.8,
   "verification": {
-    "passed": true,
+    "passed": false,
     "revised": true,
     "fixes": [
-      { "check": "hedge", "key": "f1", "detail": "Softened an absolute claim about patch availability to match the source." }
+      { "check": "hedge", "key": "c2", "detail": "Softened an absolute claim about the actor to match the source's hedged wording." }
     ],
     "open_issues": [
-      { "check": "grounding", "key": "o1", "detail": "The claimed victim count has no matching passage in the source." }
+      { "check": "grounding", "key": "c5", "detail": "The recommendation to force a password reset cites no passage in the source." }
     ]
   },
   "meta": { "provider": "cloud" },
@@ -28,8 +28,8 @@
       { "id": "c3", "text": "SSL-VPN gateways running unpatched firmware from before June 2026.", "status": "fact", "grounded": true, "source_refs": ["span_3"] }
     ],
     "indicators": [
-      { "type": "ip", "value": "198.51.100.23", "source_refs": ["span_3"] },
-      { "type": "domain", "value": "vpn-portal-update.example", "source_refs": ["span_3"] }
+      { "type": "ip", "value": "198.51.100.23", "source_refs": ["span_5"] },
+      { "type": "domain", "value": "vpn-portal-update.example", "source_refs": ["span_5"] }
     ],
     "mitigations": [
       { "id": "c4", "text": "Apply the vendor's September security patch immediately.", "status": "fact", "grounded": true, "source_refs": ["span_4"] },
