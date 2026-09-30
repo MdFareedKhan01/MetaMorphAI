@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { useBatchStream } from './useBatchStream';
 
 /** Stands in for the browser WebSocket, so the test controls every open, frame and drop. */
@@ -38,5 +38,26 @@ describe('useBatchStream (AC-13)', () => {
     unmount(); // closing on unmount must not reconnect
     await vi.advanceTimersByTimeAsync(10_000);
     expect(FakeSocket.opened).toHaveLength(2);
+  });
+
+  it('reports its state, and skips a frame that does not match the shared schema', () => {
+    const onFrame = vi.fn();
+    const { result } = renderHook(() => useBatchStream('b1', '0', onFrame));
+    expect(result.current.status).toBe('connecting');
+    const ws = FakeSocket.opened[0];
+
+    act(() => ws.onopen?.());
+    expect(result.current.status).toBe('live');
+
+    act(() => {
+      ws.onmessage?.({ data: '{oops' });
+      ws.send({ event: 'task.completed', seq: '1-0', task_id: 't1', artifact: { nope: true } });
+      ws.send({ event: 'task.progress', seq: '2-0', task_id: 't1', status: 'running' });
+    });
+    expect(onFrame).toHaveBeenCalledTimes(1);
+    expect(result.current.dropped).toBe(2);
+
+    act(() => ws.onclose?.());
+    expect(result.current.status).toBe('reconnecting');
   });
 });

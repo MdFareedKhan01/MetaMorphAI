@@ -1,5 +1,5 @@
 import type { Config } from '@ps154/shared';
-import type { Artifact, BatchSnapshot, Frame } from '../shared-temp';
+import type { Artifact, BatchSnapshot, Frame } from '@ps154/shared';
 
 export type Card = {
   task_id: string;
@@ -32,12 +32,23 @@ export function fromSnapshot(s: BatchSnapshot): BatchView {
 
 export type Action =
   | { type: 'frame'; frame: Frame }
-  | { type: 'regenerating'; task_id: string };
+  | { type: 'regenerating'; task_id: string }
+  /** A regenerate request failed: put the card back as it was. */
+  | { type: 'restore'; card: Card }
+  /** The server accepted a submit or a review decision. */
+  | { type: 'review'; task_id: string; review_state: Artifact['review_state']; comment?: string | null };
 
 export function reducer(state: BatchView, action: Action): BatchView {
   if (action.type === 'regenerating') {
     return { ...patch(state, action.task_id,
       { status: 'waiting', artifact: undefined, error: undefined, detail: undefined }), overall: 'running' };
+  }
+  if (action.type === 'restore') return patch(state, action.card.task_id, action.card);
+  if (action.type === 'review') {
+    const a = state.cards[action.task_id]?.artifact;
+    if (!a) return state;
+    return patch(state, action.task_id, { artifact: {
+      ...a, review_state: action.review_state, review_comment: action.comment === undefined ? a.review_comment : action.comment } });
   }
   const f = action.frame;
   const s = { ...state, last_seq: f.seq };

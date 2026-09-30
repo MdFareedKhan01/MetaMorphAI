@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { Artifact } from '../shared-temp';
+import type { Artifact } from '@ps154/shared';
 import advisory from '../mocks/advisory.ready.json';
 import type { Card } from '../batch/state';
 import { CardView } from './Card';
@@ -46,6 +46,30 @@ describe('cards (SRS §11.3)', () => {
     </>);
     expect(screen.getByText(/linkedin_post crashed/)).toBeInTheDocument();
     expect(screen.getByText('Advisory content')).toBeInTheDocument();
+  });
+});
+
+describe('where the text came from', () => {
+  const full = (provider: 'cloud' | 'local', model: string) =>
+    ({ provider, model, fallback_reason: null, attempts: 1, latency_ms: 1, perturbed: false });
+  const ready = (meta: Artifact['meta']) => show({ status: 'ready', artifact: { ...a, meta } as Artifact });
+
+  it('never calls the offline stub "processed on this machine"', () => {
+    // The stub reports provider "local", which used to earn the green pill.
+    ready(full('local', 'offline-stub (no model ran)'));
+    expect(screen.getByText('offline stub · no model ran')).toBeInTheDocument();
+    expect(screen.queryByText('processed on this machine')).not.toBeInTheDocument();
+  });
+
+  it('still says "processed on this machine" for a real local model', () => {
+    ready(full('local', 'qwen2.5:7b'));
+    expect(screen.getByText('processed on this machine')).toBeInTheDocument();
+  });
+
+  it('renders an advisory whose severity has the wrong shape as "unknown", not a crash', () => {
+    const content = { ...(a.content as object), severity: { value: 'high', source_refs: [] } };
+    show({ status: 'ready', artifact: { ...a, content } as Artifact });
+    expect(screen.getByText('unknown')).toBeInTheDocument();
   });
 });
 

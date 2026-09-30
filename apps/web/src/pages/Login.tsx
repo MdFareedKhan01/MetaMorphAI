@@ -1,32 +1,43 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router';
+import { Alert, Link, Stack, Typography } from '@mui/material';
 import { api, setToken } from '../api';
+import { AuthLayout, CredentialFields, SubmitButton, formValues } from '../components/AuthLayout';
 
 export default function Login() {
   const navigate = useNavigate();
+  const state = (useLocation().state ?? {}) as { from?: string; expired?: boolean; denied?: string };
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const f = new FormData(e.currentTarget);
+    setBusy(true); setError('');
     try {
-      const r = await api<{ token: string }>('/auth/login', {
-        method: 'POST', body: JSON.stringify({ name: f.get('name'), password: f.get('password') }) });
+      const r = await api<{ token: string }>('/auth/login', { method: 'POST', body: JSON.stringify(formValues(e)) });
       setToken(r.token);
-      navigate('/');
+      navigate(state.from && state.from !== '/login' ? state.from : '/', { replace: true });
     } catch (err) { setError((err as Error).message); }
+    finally { setBusy(false); }
   }
 
   return (
-    <form onSubmit={submit} className="mx-auto mt-24 max-w-sm space-y-4 rounded-lg border p-6">
-      <h1 className="text-xl font-semibold">Sign in</h1>
-      <input name="name" placeholder="operator" className="w-full rounded border px-3 py-2" />
-      <input name="password" type="password" placeholder="Password" className="w-full rounded border px-3 py-2" />
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      <button className="w-full rounded bg-slate-900 py-2 text-white">Sign in</button>
-      <p className="text-center text-sm text-slate-600">
-        Need an account? <Link className="font-medium text-slate-900 underline" to="/signup">Sign up</Link>
-      </p>
-    </form>
+    <AuthLayout>
+      <form onSubmit={submit} noValidate={false} aria-busy={busy}>
+        <Stack spacing={3}>
+          <div>
+            <Typography component="h1" variant="h2">Sign in</Typography>
+            <Typography color="text.secondary" sx={{ mt: 0.5 }}>Continue to your workspace.</Typography>
+          </div>
+          {state.expired && <Alert severity="info">Your session expired. Sign in again to continue.</Alert>}
+          {error && <Alert severity="error" role="alert">{error}</Alert>}
+          <CredentialFields />
+          <SubmitButton busy={busy} busyLabel="Signing in…">Sign in</SubmitButton>
+          <Typography variant="body2" color="text.secondary" align="center">
+            Need an account? <Link component={RouterLink} to="/signup" sx={{ fontWeight: 600 }}>Sign up</Link>
+          </Typography>
+        </Stack>
+      </form>
+    </AuthLayout>
   );
 }
