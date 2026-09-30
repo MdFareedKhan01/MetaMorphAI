@@ -36,10 +36,9 @@ export type CardActions = {
   onExport?: (as: 'md' | 'txt') => Promise<void>;
 };
 
-export function CardView({ card, globalConfig, onRegenerate, role, onSubmit, onReview, onExport }:
-    { card: Card; globalConfig: Config; onRegenerate: () => void } & CardActions) {
-  const overridden = (['audience', 'tone', 'detail', 'language'] as const)
-    .filter((k) => card.effective_config[k] !== globalConfig[k]);
+export function CardView({ card, onRegenerate, role, onSubmit, onReview, onExport }:
+    // globalConfig is still passed by the pages; the card no longer shows which settings differ from it.
+    { card: Card; globalConfig?: Config; onRegenerate: () => void } & CardActions) {
   const cfg = card.effective_config;
   const label = LABELS[card.format_id] ?? card.format_id;
   return (
@@ -53,8 +52,6 @@ export function CardView({ card, globalConfig, onRegenerate, role, onSubmit, onR
           <h3 className="truncate text-[15px] font-semibold leading-tight text-slate-900">{label}</h3>
           <p className="mt-0.5 truncate text-[12.5px] text-slate-500">{cfg.audience} · {cfg.tone} · {cfg.detail}</p>
         </div>
-        {overridden.length > 0 && (
-          <span className="shrink-0 rounded-md bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-800 ring-1 ring-violet-200">{overridden.join(', ')} overridden</span>)}
         {(card.artifact?.version ?? 1) > 1 && <span className="text-xs font-medium text-slate-500">v{card.artifact!.version}</span>}
         {card.status === 'ready' && card.artifact && <StatusChip value={card.artifact.review_state ?? 'draft'} />}
         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ring-1 ${PILL[card.status]}`}>

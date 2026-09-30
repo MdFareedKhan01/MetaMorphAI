@@ -44,7 +44,7 @@ describe('Workspace', () => {
     expect(await screen.findByText(/0 of 2 ready/)).toBeInTheDocument();
     const ws = FakeSocket.all[0];
     act(() => ws.onopen?.());
-    expect(screen.getByText('Live')).toBeInTheDocument();
+    expect(screen.queryByText(/Reconnecting|Live updates are unavailable/)).not.toBeInTheDocument();
 
     act(() => ws.emit({ event: 'task.completed', seq: '1-0', task_id: 't1', artifact: artifact({ task_id: 't1', format_id: 'advisory' }) }));
     expect(await screen.findByText(/1 of 2 ready/)).toBeInTheDocument();

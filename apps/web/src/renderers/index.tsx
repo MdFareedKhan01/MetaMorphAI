@@ -40,16 +40,24 @@ function AdvisoryView({ content: c }: { content: any }) {
       <p className="leading-7 text-slate-800"><Inline items={c.summary} /></p>
       <Section label="Affected systems"><List items={c.affected_systems} /></Section>
       {c.indicators?.length > 0 && (
-        <Section label="Indicators">
-          <ul className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-slate-50/60">
-            {c.indicators.map((i: any) => (
-              <li key={`${i.type}-${i.value}`} className="flex items-center gap-3 px-3 py-1.5">
-                <span className="w-16 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{i.type}</span>
-                <code className="font-mono text-[13.5px] text-slate-900">{i.value}</code>
-              </li>
-            ))}
-          </ul>
-        </Section>
+        <section className="border-t border-slate-100 pt-3">
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md py-1 text-[11px] font-semibold uppercase tracking-[0.09em] text-slate-500 hover:text-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 [&::-webkit-details-marker]:hidden">
+              <span aria-hidden className="inline-block text-[10px] transition-transform group-open:rotate-90">▶</span>
+              Indicators
+              <span className="rounded-full bg-slate-100 px-2 py-px text-[11px] font-bold normal-case tracking-normal text-slate-700">{c.indicators.length}</span>
+            </summary>
+            <ul tabIndex={0} aria-label="Indicators of compromise"
+              className="mt-2 max-h-56 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50/60 focus-visible:outline-2 focus-visible:outline-teal-600">
+              {c.indicators.map((i: any) => (
+                <li key={`${i.type}-${i.value}`} className="flex items-center gap-3 px-3 py-1.5">
+                  <span className="w-16 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{i.type}</span>
+                  <code className="min-w-0 break-all font-mono text-[13.5px] text-slate-900">{i.value}</code>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </section>
       )}
       <Section label="Mitigations"><List items={c.mitigations} ordered /></Section>
       {c.references?.length > 0 && (

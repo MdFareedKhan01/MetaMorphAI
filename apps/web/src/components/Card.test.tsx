@@ -32,11 +32,6 @@ describe('cards (SRS §11.3)', () => {
     expect(onRegenerate).toHaveBeenCalledOnce();
   });
 
-  it('badges a card whose config was overridden (AC-11)', () => {
-    show({ effective_config: { ...a.effective_config, tone: 'conversational' } });
-    expect(screen.getByText('tone overridden')).toBeInTheDocument();
-  });
-
   it('keeps the other cards on screen when one renderer crashes', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {}); // React logs every error a boundary catches
     const Broken = (): never => { throw new Error('malformed content'); };
@@ -85,5 +80,36 @@ describe('VerificationBadge (AC-16)', () => {
     render(<VerificationBadge score={0.8} v={v} />);
     await userEvent.click(screen.getByRole('button', { name: /1 flag/ }));
     expect(screen.getByText(/For the reviewer:/)).toBeInTheDocument();
+  });
+});
+
+describe('advisory indicators', () => {
+  const claim = (id: string) => ({ id, text: `Claim ${id}.`, source_refs: ['span_1'], status: 'fact', grounded: true });
+  const advisoryWith = (n: number) => ({
+    ...a, format_id: 'advisory',
+    content: { title: 'T', severity: 'high', summary: [claim('c1')], affected_systems: [claim('c2')], mitigations: [claim('c3')], references: [],
+      indicators: Array.from({ length: n }, (_, i) => ({ type: 'url', value: `https://example.org/${i}` })) },
+  }) as unknown as Artifact;
+
+  it('folds a long indicator list away until it is asked for, and scrolls once open', async () => {
+    show({ status: 'ready', format_id: 'advisory', artifact: advisoryWith(12) });
+    const summary = screen.getByText('Indicators').closest('summary')!;
+    const details = summary.closest('details')!;
+    expect(details).not.toHaveAttribute('open');
+    expect(summary).toHaveTextContent('12');
+
+    await userEvent.click(summary);
+    expect(details).toHaveAttribute('open');
+    expect(screen.getByRole('list', { name: 'Indicators of compromise' })).toHaveClass('overflow-y-auto', 'max-h-56');
+  });
+
+  it('shows no indicator section when there are none', () => {
+    show({ status: 'ready', format_id: 'advisory', artifact: advisoryWith(0) });
+    expect(screen.queryByText('Indicators')).not.toBeInTheDocument();
+  });
+
+  it('no longer tags a card as overridden', () => {
+    show({ effective_config: { ...a.effective_config, tone: 'conversational' } });
+    expect(screen.queryByText(/overridden/)).not.toBeInTheDocument();
   });
 });

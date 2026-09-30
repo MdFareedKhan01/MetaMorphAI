@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import {
-  Alert, Box, Button, Chip, IconButton, LinearProgress, Stack, Tab, Tabs, Tooltip, Typography, useMediaQuery, useTheme,
+  Alert, Box, Button, Chip, IconButton, Stack, Tab, Tabs, Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
 import ReplayRounded from '@mui/icons-material/ReplayRounded';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
-import WifiRounded from '@mui/icons-material/WifiRounded';
-import WifiOffRounded from '@mui/icons-material/WifiOffRounded';
 import { BatchSnapshot, SourceRecord, type Claim, type Frame } from '@ps154/shared';
 import type { BatchSnapshot as BatchSnapshotT, SourceRecord as SourceRecordT } from '@ps154/shared';
 import { api, ApiError, download } from '../api';
@@ -20,7 +18,7 @@ import { SelectionContext } from '../selection';
 import { SourcePane } from '../components/SourcePane';
 import { CardView } from '../components/Card';
 import { CardBoundary } from '../components/CardBoundary';
-import { EmptyState, ErrorState, LoadingState, Page, PageHeader, Panel, StatusChip } from '../components/ui';
+import { EmptyState, ErrorState, LoadingState, Page, PageHeader, Panel } from '../components/ui';
 
 const label = (id: string) => id.replace(/_/g, ' ');
 
@@ -175,7 +173,6 @@ function LiveBatch({ initial, source }: { initial: BatchView; source: SourceReco
 
   const tabs = wide ? ['Outputs', 'Activity'] : ['Source', 'Outputs', 'Activity'];
   const current = tabs[tab] ?? tabs[0];
-  const total = cards.length || 1;
 
   return (
     <SelectionContext.Provider value={{ active, select: setActive }}>
@@ -184,28 +181,11 @@ function LiveBatch({ initial, source }: { initial: BatchView; source: SourceReco
           title={source.filename ?? 'Pasted source'}
           crumbs={[{ label: 'New source', to: '/' }, { label: 'Confirm', to: `/sources/${source.id}` }, { label: 'Workspace' }]}
           meta={
-            <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
-              <StatusChip value={view.overall} />
-              <Chip size="small" variant="outlined" label={`${source.classification[0].toUpperCase()}${source.classification.slice(1)} source`} />
-              <Chip size="small" variant="outlined" label={`Created ${new Date(source.created_at).toLocaleString()}`} />
-              <Chip size="small" variant="outlined" label={`Batch ${view.batch_id.slice(0, 8)}`} />
-              <Chip size="small" icon={link === 'live' ? <WifiRounded /> : <WifiOffRounded />}
-                color={link === 'live' ? 'success' : link === 'disconnected' ? 'error' : 'warning'} variant="outlined"
-                label={link === 'live' ? 'Live' : link === 'connecting' ? 'Connecting' : link === 'reconnecting' ? 'Reconnecting' : 'Disconnected'} />
-            </Stack>}
+            <Typography variant="body2" color="text.secondary">
+              {source.classification[0].toUpperCase()}{source.classification.slice(1)} source · Created {new Date(source.created_at).toLocaleString()} · Batch {view.batch_id.slice(0, 8)}
+            </Typography>}
           actions={mayWrite && failed > 0 ? (
             <Button variant="outlined" startIcon={<ReplayRounded />} onClick={retryFailed}>Retry {failed} failed</Button>) : undefined} />
-
-        <Box sx={{ mb: 3 }}>
-          <Stack direction="row" sx={{ justifyContent: 'space-between', mb: .75 }}>
-            <Typography variant="body2" role="status" aria-live="polite" sx={{ fontWeight: 600 }}>
-              {ready} of {cards.length} ready{failed > 0 ? ` · ${failed} failed` : ''}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">{Math.round((done / total) * 100)}%</Typography>
-          </Stack>
-          <LinearProgress variant="determinate" value={(done / total) * 100} color={failed > 0 ? 'warning' : 'primary'}
-            aria-label="Batch progress" sx={{ height: 8, borderRadius: 4 }} />
-        </Box>
 
         {link === 'reconnecting' && <Alert severity="warning" sx={{ mb: 2 }}>Live updates dropped. Reconnecting; nothing is lost, the stream resumes where it stopped.</Alert>}
         {link === 'disconnected' && (
@@ -230,6 +210,10 @@ function LiveBatch({ initial, source }: { initial: BatchView; source: SourceReco
           ))}
 
           <Box sx={{ minWidth: 0 }}>
+            {/* No visible progress card; screen readers still hear the count as it changes. */}
+            <Box role="status" aria-live="polite" sx={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
+              {ready} of {cards.length} ready{failed > 0 ? ` · ${failed} failed` : ''}
+            </Box>
             <Tabs value={Math.min(tab, tabs.length - 1)} onChange={(_, v) => setTab(v)} aria-label="Workspace sections"
               variant={wide ? 'standard' : 'fullWidth'} sx={{ mb: 2.5, borderBottom: 1, borderColor: 'divider' }}>
               {tabs.map((t, i) => <Tab key={t} label={t} id={`ws-tab-${i}`} aria-controls={`ws-panel-${i}`} />)}
