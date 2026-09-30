@@ -2,6 +2,7 @@ import type { Redis } from 'ioredis';
 
 import {
   cloud,
+  gemini,
   local,
   TransportError,
   RateLimitError,
@@ -113,6 +114,12 @@ export function createRouter(redis: Redis) {
    *    -> retry transport errors
    *    -> local on failure
    */
+
+    const cloudProvider =
+    env.AI_PROVIDER === 'gemini'
+      ? gemini
+      : cloud;
+
   async function call(req: LLMRequest): Promise<Routed> {
     /*
      * AC-5 / sovereignty boundary:
@@ -164,7 +171,7 @@ export function createRouter(redis: Redis) {
      */
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const res = await cloud.generate(outbound);
+        const res = await cloudProvider.generate(outbound);
 
         return {
           ...res,

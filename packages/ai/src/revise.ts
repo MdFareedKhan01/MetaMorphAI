@@ -116,8 +116,19 @@ RULES:
 2. Do not introduce new facts.
 3. Do not introduce new identifiers.
 4. Preserve uncertainty from the source.
-5. Keep each claim's meaning as close to the original
-   as possible.
+5. Keep each claim's meaning as close to the original as possible.
+
+   EXCEPTION: when a verifier finding reports quality, truncation,
+   incompleteness, or malformed wording, the original wording is
+   considered unreliable. Reconstruct the claim from the supplied
+   source spans instead of preserving the malformed wording.
+
+   Always prioritize:
+   1. complete grammar,
+   2. source support,
+   3. uncertainty preservation,
+   4. verifier requirements,
+   5. similarity to the original wording.
 5a. For a hedge finding, preserve the uncertainty explicitly
     expressed in the cited source span. Do not turn "could",
     "may", "potential", "likely", etc. into an unconditional
@@ -126,6 +137,42 @@ RULES:
     wording is directly supported by the cited source span.
     Prefer wording from the source over paraphrases that add
     unsupported meaning.
+5c. Every revised claim must be a complete, grammatical sentence
+    or phrase appropriate for its output field. Do not splice
+    unrelated facts together in a way that produces an incomplete
+    or malformed sentence. If combining multiple source facts,
+    preserve the natural sentence structure of the original facts.
+5d. For a quality finding indicating truncation or incompleteness:
+
+    The original claim text may be unusable. Do NOT preserve its
+    truncated structure.
+
+    Reconstruct the ENTIRE claim from the supplied source spans.
+
+    Required procedure:
+    1. Read all supplied source spans completely.
+    2. Ignore the incomplete ending of the original claim.
+    3. Identify the complete proposition expressed by the source.
+    4. Rewrite the claim from scratch as one complete sentence or phrase.
+    5. Preserve every uncertainty or attribution marker required by
+       the source, including "could", "may", "might", "potentially",
+       "reported", "suspected", etc.
+    6. Use all source_refs necessary to support the complete proposition.
+    7. The final claim MUST NOT end with a dangling word or fragment.
+    8. The final claim must be grammatically complete.
+    9. Do not shorten the reconstructed proposition merely to resemble
+       the original truncated text.
+
+    Example:
+    If the original claim ends with:
+      "... consume excessive system"
+
+    and the supplied source says:
+      "... consume excessive system resources or potentially execute
+       arbitrary code on the targeted system."
+
+    the corrected claim must reconstruct the complete proposition,
+    rather than extending the truncated text mechanically.
 6. Do not broaden any claim.
 7. Use only source_refs that actually exist in the
    supplied source spans.

@@ -53,14 +53,14 @@ function bestGroundingScore(
   spans: Span[]
 ): number {
   const spanMap = new Map(
-    spans.map((span) => [
+    spans.map(span => [
       span.span_id,
       span.text,
     ])
   );
 
   const citedSpans = claim.source_refs
-    .map((ref) => spanMap.get(ref))
+    .map(ref => spanMap.get(ref))
     .filter(
       (text): text is string =>
         typeof text === 'string'
@@ -70,13 +70,18 @@ function bestGroundingScore(
     return 0;
   }
 
+  const combinedSource = citedSpans.join(' ');
+
   return Math.max(
-    ...citedSpans.map((span) =>
+    ...citedSpans.map(span =>
       overlapScore(claim.text, span)
+    ),
+    overlapScore(
+      claim.text,
+      combinedSource
     )
   );
 }
-
 /**
  * Verify claim grounding and provenance.
  */
@@ -295,6 +300,58 @@ function verifyHedges(claims: Claim[], spans: Span[]): Finding[] {
 }
 
 /**
+ * Verify basic grammatical completeness and detect
+ * obviously truncated generated claims.
+ *
+ * This is intentionally deterministic and conservative.
+ */
+function verifyQuality(claims: Claim[]): Finding[] {
+  const findings: Finding[] = [];
+
+  for (const claim of claims) {
+    const text = claim.text.trim();
+
+    if (!text) {
+      findings.push({
+        check: 'quality',
+        key: claim.id,
+        detail: 'Claim is empty.',
+      });
+      continue;
+    }
+
+    // Obvious truncation: sentence ends with a dangling word.
+    if (
+      /\b(?:the|a|an|to|of|for|with|and|or|but|that|which|in|on|at|by|from|as|is|are|can|could|may|might|will|would|system|application|excessive)\s*$/i.test(
+        text
+      )
+    ) {
+      findings.push({
+        check: 'quality',
+        key: claim.id,
+        detail:
+          'Claim is incomplete or truncated. Reconstruct the entire claim from the cited source spans; do not preserve the truncated wording. Return a complete sentence or phrase supported by the source.',
+      });
+      continue;
+    }
+
+    // Obvious punctuation truncation.
+    if (
+      /[,;:/-]\s*$/.test(text)
+    ) {
+      findings.push({
+        check: 'quality',
+        key: claim.id,
+        detail:
+          'Claim appears to end with incomplete punctuation.',
+      });
+    }
+  }
+
+  return findings;
+}
+
+/**
  * Run all currently implemented verifier checks.
  *
  * The verifier is intentionally deterministic.
@@ -321,6 +378,9 @@ export function verifyClaims(
       claims,
       spans
     ),
+    ...verifyQuality(
+    claims
+  ),
   ];
 
   return {

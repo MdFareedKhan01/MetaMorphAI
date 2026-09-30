@@ -19,6 +19,19 @@ function splitSpans(raw: string): Span[] {
   }));
 }
 
+function median(values: number[]): number {
+  const sorted = [...values].sort(
+    (a, b) => a - b
+  );
+
+  const mid =
+    Math.floor(sorted.length / 2);
+
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
+}
+
 const args = process.argv.slice(2);
 
 const file =
@@ -29,6 +42,8 @@ const classification =
 
 const requestedFormat =
   args[2];
+
+const RUNS = 3;
 
 if (
   !['public', 'internal', 'restricted'].includes(
@@ -88,10 +103,52 @@ const source = {
     .digest('hex'),
 };
 
+const config = {
+  audience:
+    'senior government officials',
+  tone: 'formal' as const,
+  detail: 'medium' as const,
+  language: 'en' as const,
+};
+
+type Measurement = {
+  wallTime: number;
+  grounding: number;
+  passed: boolean;
+  revised: boolean;
+  fixes: number;
+  openIssues: number;
+};
+
+const measurements: Record<
+  string,
+  Measurement[]
+> = {};
+
+for (const format of formatsToRun) {
+  measurements[format] = [];
+}
+
 try {
   // --------------------------------------------------
   // EXTRACTION
   // --------------------------------------------------
+
+  console.log(
+    `\n=== BENCHMARK ===`
+  );
+
+  console.log(
+    `file: ${file}`
+  );
+
+  console.log(
+    `classification: ${classification}`
+  );
+
+  console.log(
+    `runs_per_format: ${RUNS}`
+  );
 
   const extractionStart =
     performance.now();
@@ -141,36 +198,35 @@ try {
   );
 
   // --------------------------------------------------
-  // FORMATS
+  // FORMAT BENCHMARK
   // --------------------------------------------------
 
-  const config = {
-    audience:
-      'senior government officials',
-    tone: 'formal' as const,
-    detail: 'medium' as const,
-    language: 'en' as const,
-  };
+  for (const format of formatsToRun) {
+    console.log(
+      `\n=== ${format.toUpperCase()} ===`
+    );
 
-  console.log(
-    '\n=== FORMAT MEASUREMENTS ==='
-  );
+    for (
+      let run = 1;
+      run <= RUNS;
+      run++
+    ) {
+      const start =
+        performance.now();
 
-  for (
-    const format of formatsToRun
-  ) {
-    const start =
-      performance.now();
+      const result =
+        await engine.runFormat({
+          canonical,
+          spans: source.spans,
+          format,
+          config,
+          classification:
+            source.classification,
+        });
 
-    const result =
-      await engine.runFormat({
-        canonical,
-        spans: source.spans,
-        format,
-        config,
-        classification:
-          source.classification,
-      });
+      const wallTime =
+        performance.now() -
+        start;
 
       const grounding =
         result.grounding.total_claims > 0
@@ -178,47 +234,118 @@ try {
             result.grounding.total_claims
           : 1;
 
-    const wallTime =
-      performance.now() -
-      start;
+      const verification =
+        result.verification;
 
-    const groundingClaims =
-      result.verification;
+      const measurement = {
+        wallTime,
+        grounding,
+        passed:
+          verification.passed,
+        revised:
+          verification.revised,
+        fixes:
+          verification.fixes.length,
+        openIssues:
+          verification.open_issues.length,
+      };
 
-    const totalFindings =
-      groundingClaims.fixes.length +
-      groundingClaims.open_issues.length;
+      measurements[format].push(
+        measurement
+      );
+
+      console.log(
+        `run ${run}: ` +
+        `wall=${Math.round(wallTime)}ms ` +
+        `grounding=${grounding.toFixed(2)} ` +
+        `passed=${verification.passed} ` +
+        `revised=${verification.revised} ` +
+        `fixes=${verification.fixes.length} ` +
+        `open=${verification.open_issues.length}`
+      );
+    }
+  }
+
+  // --------------------------------------------------
+  // MEDIANS
+  // --------------------------------------------------
+
+  console.log(
+    '\n=== BENCHMARK MEDIANS ==='
+  );
+
+  for (const format of formatsToRun) {
+    const runs =
+      measurements[format];
+
+    const medianWall =
+      median(
+        runs.map(
+          r => r.wallTime
+        )
+      );
+
+    const medianGrounding =
+      median(
+        runs.map(
+          r => r.grounding
+        )
+      );
+
+    const passedRuns =
+      runs.filter(
+        r => r.passed
+      ).length;
+
+    const revisedRuns =
+      runs.filter(
+        r => r.revised
+      ).length;
+
+    const totalFixes =
+      runs.reduce(
+        (sum, r) =>
+          sum + r.fixes,
+        0
+      );
+
+    const totalOpenIssues =
+      runs.reduce(
+        (sum, r) =>
+          sum + r.openIssues,
+        0
+      );
 
     console.log(
       `\n${format}:`
     );
+
     console.log(
-            `  grounding: ${grounding.toFixed(2)}`
-          );
-    console.log(
-      `  wall_time_ms: ${Math.round(
-        wallTime
+      `  median_wall_time_ms: ${Math.round(
+        medianWall
       )}`
     );
 
     console.log(
-      `  passed: ${groundingClaims.passed}`
+      `  median_grounding: ${medianGrounding.toFixed(
+        2
+      )}`
     );
 
     console.log(
-      `  revised: ${groundingClaims.revised}`
+      `  passed_runs: ${passedRuns}/${RUNS}`
     );
 
     console.log(
-      `  fixes: ${groundingClaims.fixes.length}`
+      `  revised_runs: ${revisedRuns}/${RUNS}`
     );
 
     console.log(
-      `  open_issues: ${groundingClaims.open_issues.length}`
+      `  total_fixes: ${totalFixes}`
     );
 
     console.log(
-      `  total_findings: ${totalFindings}`
+      `  total_open_issues: ${totalOpenIssues}`
     );
   }
 

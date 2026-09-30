@@ -38,6 +38,24 @@ SOURCE DISCIPLINE:
   contained inside the source.
 `;
 
+const CLAIM_SEPARATION = `
+CLAIM SEPARATION:
+- Keep independently stated claims separate when combining them would weaken
+  traceability or grounding.
+- Prefer concise separate claims when different source spans support different
+  propositions.
+- Do not splice structured facts such as product names, version ranges, dates,
+  or severity into the middle of an unrelated impact sentence.
+- If a sentence would require joining an impact statement with affected-version
+  information, keep them as separate ClaimNodes.
+- Every ClaimNode must be grammatically complete and semantically coherent.
+- Never truncate a source phrase or leave a sentence incomplete just to fit
+  multiple facts into one ClaimNode.
+- Do not combine multiple source statements into one ClaimNode if doing so makes
+  the resulting sentence grammatically incomplete, ambiguous, or difficult to
+  trace to its supporting spans.
+`;
+
 const OUTPUT_RULES = `
 OUTPUT:
 - Return exactly one JSON object matching the supplied JSON Schema.
@@ -129,11 +147,7 @@ IDENTIFIERS / VERSIONS:
 Copy CVEs, IPs, domains, hashes, filenames, versions, and other indicators
 exactly. Preserve affected products and version ranges exactly.
 
-CLAIM SEPARATION:
-- Keep independently stated source claims separate when combining them would
-  weaken traceability or grounding.
-- Do not merge distinct causes, attack methods, impacts, or other independent
-  claims merely to make the advisory shorter.
+${CLAIM_SEPARATION}
 
 ${OUTPUT_RULES}
 
@@ -178,11 +192,42 @@ explicit impact, explicit exploitation method, and remediation.
 If many CVEs are present, describe the vulnerability set generally unless a
 specific CVE is directly relevant.
 
-CLAIM SEPARATION:
-- Keep independently stated claims separate when combining them would weaken
-  traceability or grounding.
-- Prefer concise separate claims when different source spans support different
-  propositions.
+- If a claim continues across multiple source spans, cite ALL spans
+  required to support the complete claim.
+- Do not truncate a proposition merely because one cited span contains
+  only part of the sentence.
+- When a source sentence is split across spans, reconstruct the complete
+  proposition and cite every span needed to support it.
+
+${CLAIM_SEPARATION}
+
+EXECUTIVE SUMMARY CLAIM COMPLETENESS:
+- Every ClaimNode must contain a complete grammatical proposition.
+- Never truncate a sentence because it is long.
+- Never stop a claim in the middle of a source sentence.
+- If a source proposition is long, include the complete proposition or
+  split it into multiple ClaimNodes.
+- A claim must never end with a word such as "system", "application",
+  "resources", "the", "of", "to", "and", or another word that leaves
+  the proposition incomplete.
+- When summarizing a canonical key fact, preserve the complete proposition,
+  including its uncertainty and outcome.
+- For a key fact supported by multiple spans, cite all spans required to
+  express the complete proposition.
+- Do not shorten "could ... consume excessive system resources or
+  potentially execute arbitrary code" into a partial phrase.
+
+KEY POINTS FROM CANONICAL FACTS:
+- When a canonical key_fact is suitable as an executive-summary key point,
+  reuse the complete proposition from that key_fact rather than shortening
+  or paraphrasing it.
+- Preserve the complete key_fact text and all of its source_refs.
+- Do not omit the ending of a key_fact.
+- Do not select only part of a key_fact because it appears shorter or more
+  concise.
+- If the key_fact is too detailed for a key point, rewrite it as a complete
+  sentence, but preserve the entire proposition and its uncertainty.
+- A key point must never be a partial substring of a canonical key_fact.
 
 ${OUTPUT_RULES}
 
@@ -239,14 +284,21 @@ Only state explicitly supported impacts and preserve uncertainty.
 Communicate source-supported remediation actions; do not invent steps or replace
 actions with a list of URLs.
 
+HOOK RULES:
+- The hook must express one coherent proposition.
+- Do not combine severity, affected versions, or other metadata
+  with the vulnerability impact sentence unless the source explicitly
+  states them as one proposition.
+- If the source says a vulnerability "could" cause an impact,
+  preserve "could" and the complete impact proposition.
+- Prefer the complete canonical key fact as the hook when it is suitable.
+- Do not truncate or splice the canonical key fact.
+- If severity is included, state it as a separate complete ClaimNode.
+
 HASHTAGS:
 Hashtags are framing, not factual claims. Use at most 5 relevant hashtags.
 
-CLAIM SEPARATION:
-- Keep independently stated claims separate when combining them would weaken
-  traceability or grounding.
-- Do not combine multiple source statements into one ClaimNode if that makes the
-  claim harder to trace to its cited spans.
+${CLAIM_SEPARATION}
 
 ${OUTPUT_RULES}
 
