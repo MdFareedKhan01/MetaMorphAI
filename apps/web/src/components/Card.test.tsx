@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Artifact } from '@ps154/shared';
 import advisory from '../mocks/advisory.ready.json';
@@ -14,6 +14,18 @@ const show = (card: Partial<Card>, onRegenerate = () => {}) =>
   render(<CardView card={{ ...base, ...card }} globalConfig={a.effective_config} onRegenerate={onRegenerate} />);
 
 afterEach(() => { vi.restoreAllMocks(); });
+
+describe('the running timer', () => {
+  it('counts up even when the card has no recorded start time', async () => {
+    vi.useFakeTimers();
+    try {
+      show({ status: 'running' }); // e.g. the worker started before this page loaded
+      expect(screen.getByText(/Writing · 00:00/)).toBeInTheDocument();
+      await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+      expect(screen.getByText(/Writing · 00:03/)).toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+});
 
 describe('cards (SRS §11.3)', () => {
   it('tells a queued card from a running one', () => {

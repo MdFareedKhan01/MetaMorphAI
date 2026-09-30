@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, ListItemText, Menu, MenuItem, TextField, Tooltip,
 } from '@mui/material';
@@ -79,6 +79,8 @@ const Skeleton = () => (
 
 function Working({ card }: { card: Card }) {
   const [now, setNow] = useState(Date.now());
+  // Fallback clock for a card that reaches a live state with no start time (never show a frozen 00:00).
+  const seen = useRef(Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
   if (card.status === 'waiting') {
     return (
@@ -90,7 +92,7 @@ function Working({ card }: { card: Card }) {
       </div>
     );
   }
-  const s = card.started_at ? Math.floor((now - card.started_at) / 1000) : 0;
+  const s = Math.max(0, Math.floor((now - (card.started_at ?? seen.current)) / 1000));
   const at = STEP[card.status] ?? 0;
   return (
     <div className="space-y-4">

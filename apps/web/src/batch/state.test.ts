@@ -60,4 +60,30 @@ describe('batch reducer (SRS §11.1)', () => {
     expect(view.cards.t9.error?.message).toBe('Schema invalid');
     expect(view.last_seq).toBe('9-0');
   });
+
+  describe('the running clock', () => {
+    const live = (status: string) => fromSnapshot({
+      batch_id: 'b1', source_id: 's1', global_config: ready.effective_config, overall_status: 'running', stream_last_id: '0',
+      artifacts: [{ ...waiting('t1', 'advisory'), status }],
+    } as BatchSnapshot);
+
+    it('starts counting for a card that was already running when the page loaded', () => {
+      expect(live('running').cards.t1.started_at).toBeTypeOf('number');
+      expect(live('waiting').cards.t1.started_at).toBeUndefined();
+    });
+
+    it('starts at the first live frame and does not restart on the next one', () => {
+      const first = apply(live('waiting'), { event: 'task.progress', seq: '1-0', task_id: 't1', status: 'running' });
+      const t0 = first.cards.t1.started_at;
+      expect(t0).toBeTypeOf('number');
+      const later = apply(first, { event: 'task.progress', seq: '2-0', task_id: 't1', status: 'validating' });
+      expect(later.cards.t1.started_at).toBe(t0);
+    });
+
+    it('clears the clock when a card goes back to the queue', () => {
+      const s = apply(live('running'), { event: 'task.progress', seq: '1-0', task_id: 't1', status: 'waiting' });
+      expect(s.cards.t1.started_at).toBeUndefined();
+      expect(reducer(live('running'), { type: 'regenerating', task_id: 't1' }).cards.t1.started_at).toBeUndefined();
+    });
+  });
 });

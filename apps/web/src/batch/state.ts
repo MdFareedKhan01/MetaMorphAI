@@ -16,11 +16,15 @@ export type BatchView = {
   global_config: Config; cards: Record<string, Card>;
 };
 
+const LIVE = ['running', 'validating', 'revising'];
+
 export function fromSnapshot(s: BatchSnapshot): BatchView {
   const cards: Record<string, Card> = {};
   for (const a of s.artifacts) {
     cards[a.task_id] = {
       task_id: a.task_id, format_id: a.format_id, status: a.status, effective_config: a.effective_config,
+      // The worker may have started before this page loaded, so its `running` frame is gone: count from now.
+      started_at: LIVE.includes(a.status) ? Date.now() : undefined,
       artifact: a.status === 'ready' ? a : undefined,
       error: a.status === 'error'
         ? { code: 'FAILED', message: a.error_log ?? 'Generation failed', retryable: true } : undefined,
@@ -41,7 +45,7 @@ export type Action =
 export function reducer(state: BatchView, action: Action): BatchView {
   if (action.type === 'regenerating') {
     return { ...patch(state, action.task_id,
-      { status: 'waiting', artifact: undefined, error: undefined, detail: undefined }), overall: 'running' };
+      { status: 'waiting', artifact: undefined, error: undefined, detail: undefined, started_at: undefined }), overall: 'running' };
   }
   if (action.type === 'restore') return patch(state, action.card.task_id, action.card);
   if (action.type === 'review') {
@@ -56,7 +60,9 @@ export function reducer(state: BatchView, action: Action): BatchView {
     case 'task.progress':
       return patch(s, f.task_id, {
         status: f.status, detail: f.detail,
-        started_at: f.status === 'running' ? Date.now() : state.cards[f.task_id]?.started_at });
+        // Start the clock at the first live frame and keep it; a queued card has no clock.
+        started_at: f.status === 'waiting' ? undefined
+          : LIVE.includes(f.status) ? (state.cards[f.task_id]?.started_at ?? Date.now()) : state.cards[f.task_id]?.started_at });
     case 'task.completed':
       return patch(s, f.task_id, { status: 'ready', artifact: f.artifact, error: undefined, detail: undefined });
     case 'task.failed':
