@@ -9,6 +9,7 @@ export const Finding = z.object({
     'severity',
     'constraint',
     'grounding',
+    'quality',
   ]),
   key: z.string(),
   detail: z.string(),

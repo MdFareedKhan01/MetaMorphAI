@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-
+import { GoogleGenAI } from '@google/genai';
 import { env } from './env';
 
 export type Provider = 'cloud' | 'local';
@@ -146,6 +146,83 @@ export class GroqAdapter implements LLMAdapter {
 }
 
 /* --------------------------------------------------
+ * Gemini
+ * -------------------------------------------------- */
+
+export class GeminiAdapter implements LLMAdapter {
+  private client: GoogleGenAI;
+
+  constructor() {
+    this.client = new GoogleGenAI({
+      apiKey: env.GEMINI_API_KEY,
+    });
+  }
+
+  async generate(request: LLMRequest): Promise<LLMResponse> {
+    const started = Date.now();
+
+    try {
+      const response = await this.client.models.generateContent({
+        model: env.GEMINI_MODEL,
+
+        contents: request.user,
+
+        config: {
+          systemInstruction: request.system,
+          temperature: 0,
+
+          ...(request.jsonSchema
+            ? {
+                responseMimeType: 'application/json',
+                responseSchema: request.jsonSchema,
+              }
+            : {}),
+        },
+      });
+
+      const text = response.text;
+
+      if (!text) {
+        throw new TransportError(
+          'Gemini returned an empty response'
+        );
+      }
+
+      return {
+        text,
+        provider: 'cloud',
+        model: env.GEMINI_MODEL,
+        latency_ms: Date.now() - started,
+      };
+    } catch (error: any) {
+      if (
+        error?.status === 429 ||
+        error?.code === 429
+      ) {
+        throw new RateLimitError(
+          error?.message ??
+            'Gemini rate limit exceeded'
+        );
+      }
+
+      if (error instanceof TransportError) {
+        throw error;
+      }
+
+      console.error('Gemini request failed:', {
+        status: error?.status,
+        code: error?.code,
+        message: error?.message,
+      });
+
+      throw new TransportError(
+        error?.message ?? 'Gemini request failed'
+      );
+    }
+  }
+}
+
+/* --------------------------------------------------
  * Ollama
  * -------------------------------------------------- */
 
@@ -233,4 +310,5 @@ export class OllamaAdapter implements LLMAdapter {
 }
 
 export const cloud = new GroqAdapter();
+export const gemini = new GeminiAdapter();
 export const local = new OllamaAdapter();
