@@ -11,6 +11,7 @@ import AddCircleOutlineRounded from '@mui/icons-material/AddCircleOutlineRounded
 import CollectionsOutlined from '@mui/icons-material/CollectionsOutlined';
 import LoginRounded from '@mui/icons-material/LoginRounded';
 import PersonAddAltRounded from '@mui/icons-material/PersonAddAltRounded';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { setToken } from '../api';
 import { useActiveBatch } from '../activity';
 import { useRequestsInFlight, useSession } from '../session';
@@ -39,6 +40,7 @@ export default function AppShell() {
   const { user } = useSession();
   const busy = useRequestsInFlight();
   const batch = useActiveBatch();
+  const reduceMotion = useReducedMotion();
   const [drawer, setDrawer] = useState(false);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
@@ -73,7 +75,7 @@ export default function AppShell() {
           </IconButton>
           <Brand to={user ? '/' : '/login'} />
 
-          <Stack component="nav" aria-label="Main navigation" direction="row" spacing={0.5} sx={{ display: { xs: 'none', md: 'flex' }, flexGrow: 1 }}>
+          <Stack component="nav" aria-label="Main navigation" direction="row" spacing={0.5} sx={{ display: { xs: 'none', md: 'flex' }, flexGrow: user ? 1 : 0, ml: user ? 0 : 'auto' }}>
             {nav.map((n) => (
               <Button key={n.to} component={RouterLink} to={n.to} color="inherit" startIcon={n.icon} aria-current={current(n.to) ? 'page' : undefined}
                 sx={{ color: current(n.to) ? 'primary.main' : 'text.secondary', bgcolor: current(n.to) ? 'rgba(15,118,110,.08)' : 'transparent' }}>
@@ -140,7 +142,24 @@ export default function AppShell() {
         </List>
       </Drawer>
 
-      <Box id="main" tabIndex={-1} sx={{ flexGrow: 1, outline: 'none' }}><Outlet /></Box>
+      <Box id="main" tabIndex={-1} sx={{ flexGrow: 1, outline: 'none' }}>
+        {where.pathname === '/login' || where.pathname === '/signup' ? (
+          <Box sx={{ perspective: '1600px', overflow: 'hidden' }}>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={where.pathname}
+                initial={reduceMotion ? false : { rotateY: 90, opacity: 0 }}
+                animate={{ rotateY: 0, opacity: 1 }}
+                exit={reduceMotion ? undefined : { rotateY: -90, opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.55, ease: [0.22, 1, 0.36, 1] }}
+                style={{ transformStyle: 'preserve-3d', transformOrigin: 'center center', backfaceVisibility: 'hidden' }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+          </Box>
+        ) : <Outlet />}
+      </Box>
     </Box>
   );
 }

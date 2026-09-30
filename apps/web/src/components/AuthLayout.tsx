@@ -13,30 +13,32 @@ const POINTS = [
   { icon: <LockOutlined />, title: 'Restricted stays on this machine', body: 'Routing is decided in code, before any provider is chosen.' },
 ];
 
-/** Split screen: what the product guarantees on the left, the form on the right. */
+/** Centered auth card: product guarantees on the left, credentials on the right. */
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0,5fr) minmax(0,6fr)' }, minHeight: 'calc(100vh - 66px)' }}>
-      <Box sx={{ display: { xs: 'none', md: 'flex' }, flexDirection: 'column', justifyContent: 'center', p: 8, color: '#fff',
-        background: 'radial-gradient(1200px 500px at 0% 0%, #14b8a6 0%, transparent 60%), linear-gradient(160deg,#0b4f4a,#0f766e 55%,#115e59)' }}>
-        <Typography variant="overline" sx={{ opacity: .8, letterSpacing: '.14em' }}>SIH 2026 · SIH26154</Typography>
-        <Typography variant="h2" sx={{ mt: 1, mb: 1.5, fontSize: '2.1rem', lineHeight: 1.2 }}>One source. Every audience. Nothing invented.</Typography>
-        <Typography sx={{ opacity: .85, maxWidth: 460, mb: 5, lineHeight: 1.7 }}>
-          MetaMorph-AI turns a threat report into audience-specific artefacts and proves each sentence against the source.
-        </Typography>
-        <Stack spacing={3} sx={{ maxWidth: 480 }}>
-          {POINTS.map((p, i) => (
-            <motion.div key={p.title} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: .1 + i * .1, duration: .4 }}>
-              <Stack direction="row" spacing={2}>
-                <Box aria-hidden sx={{ width: 40, height: 40, borderRadius: 2, display: 'grid', placeItems: 'center', flexShrink: 0, bgcolor: 'rgba(255,255,255,.14)' }}>{p.icon}</Box>
-                <Box><Typography sx={{ fontWeight: 600 }}>{p.title}</Typography><Typography variant="body2" sx={{ opacity: .8 }}>{p.body}</Typography></Box>
-              </Stack>
-            </motion.div>
-          ))}
-        </Stack>
-      </Box>
-      <Box sx={{ display: 'grid', placeItems: 'center', p: { xs: 2, sm: 4 } }}>
-        <Box sx={{ width: '100%', maxWidth: 420 }}>{children}</Box>
+    <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 'calc(100vh - 66px)', p: { xs: 2, sm: 4, lg: 6 } }}>
+      <Box sx={{ display: 'grid', width: '100%', maxWidth: 1120, overflow: 'hidden', gridTemplateColumns: { xs: '1fr', md: 'minmax(0,1fr) minmax(0,1fr)' }, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 18px 50px rgba(15, 118, 110, .12)' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', p: { xs: 3, sm: 5, lg: 7 }, color: '#fff',
+          background: 'radial-gradient(900px 420px at 0% 0%, #14b8a6 0%, transparent 60%), linear-gradient(160deg,#0b4f4a,#0f766e 55%,#115e59)' }}>
+          <Typography variant="overline" sx={{ opacity: .8, letterSpacing: '.14em' }}>SIH 2026 · SIH26154</Typography>
+          <Typography variant="h2" sx={{ mt: 1, mb: 1.5, fontSize: { xs: '1.8rem', sm: '2.1rem' }, lineHeight: 1.2 }}>One source. Every audience. Nothing invented.</Typography>
+          <Typography sx={{ opacity: .85, maxWidth: 460, mb: { xs: 3, sm: 5 }, lineHeight: 1.7 }}>
+            MetaMorph-AI turns a threat report into audience-specific artefacts and proves each sentence against the source.
+          </Typography>
+          <Stack spacing={{ xs: 2, sm: 3 }} sx={{ maxWidth: 480 }}>
+            {POINTS.map((p, i) => (
+              <motion.div key={p.title} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: .1 + i * .1, duration: .4 }}>
+                <Stack direction="row" spacing={2}>
+                  <Box aria-hidden sx={{ width: 40, height: 40, borderRadius: 2, display: 'grid', placeItems: 'center', flexShrink: 0, bgcolor: 'rgba(255,255,255,.14)' }}>{p.icon}</Box>
+                  <Box><Typography sx={{ fontWeight: 600 }}>{p.title}</Typography><Typography variant="body2" sx={{ opacity: .8 }}>{p.body}</Typography></Box>
+                </Stack>
+              </motion.div>
+            ))}
+          </Stack>
+        </Box>
+        <Box sx={{ display: 'grid', alignItems: 'center', p: { xs: 3, sm: 5, lg: 7 } }}>
+          <Box sx={{ width: '100%', maxWidth: 420, mx: 'auto' }}>{children}</Box>
+        </Box>
       </Box>
     </Box>
   );
