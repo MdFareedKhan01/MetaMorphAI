@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { Claim } from '@ps154/shared';
-import { splitSpans } from '../shared-temp';
+import { splitSpans } from '@ps154/shared';
 import { SelectionContext } from '../selection';
 import { ClaimSpan } from './ClaimSpan';
 import { SourcePane } from './SourcePane';

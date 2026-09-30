@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Artifact, BatchSnapshot, Frame } from '../shared-temp';
+import type { Artifact, BatchSnapshot, Frame } from '@ps154/shared';
 import advisory from '../mocks/advisory.ready.json';
 import { fromSnapshot, reducer, type BatchView } from './state';
 

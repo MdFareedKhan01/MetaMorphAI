@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Claim } from '@ps154/shared';
-import type { Artifact } from '../shared-temp';
+import type { Artifact } from '@ps154/shared';
 import type { Card } from '../batch/state';
 import advisory from '../mocks/advisory.ready.json';
 import { DEMO_SOURCE, DEMO_SPANS } from '../mocks/demo-source';
@@ -21,12 +21,16 @@ const ADVISORY = advisory as unknown as Artifact;
 const claim = (id: string, text: string, status: Claim['status'], refs: string[], grounded = true): Claim =>
   ({ id, text, status, source_refs: refs, grounded });
 
+const meta = (provider: 'cloud' | 'local', model: string) =>
+  ({ provider, model, fallback_reason: null, attempts: 1, latency_ms: 900, perturbed: false });
+const shell = { claims: [] as Claim[], review_state: 'draft' as const, review_comment: null, error_log: null };
+
 const LINKEDIN: Artifact = {
-  task_id: 't-linkedin', batch_id: 'b1', format_id: 'linkedin_post', version: 1, status: 'ready',
+  ...shell, task_id: 't-linkedin', batch_id: 'b1', format_id: 'linkedin_post', version: 1, status: 'ready',
   effective_config: { audience: 'General public', tone: 'conversational', detail: 'brief', language: 'en' },
   grounding_score: 1,
   verification: { passed: true, revised: false, fixes: [], open_issues: [] },
-  meta: { provider: 'local' },
+  meta: meta('local', 'qwen2.5:7b'),
   content: {
     hook: claim('c1', '37 organisations had their VPN gateways targeted between 3 and 9 September.', 'fact', ['span_1']),
     body: [
@@ -38,11 +42,11 @@ const LINKEDIN: Artifact = {
 };
 
 const EXECUTIVE: Artifact = {
-  task_id: 't-executive', batch_id: 'b1', format_id: 'executive_summary', version: 1, status: 'ready',
+  ...shell, task_id: 't-executive', batch_id: 'b1', format_id: 'executive_summary', version: 1, status: 'ready',
   effective_config: { audience: 'Ministry leadership', tone: 'formal', detail: 'brief', language: 'en' },
   grounding_score: 1,
   verification: { passed: true, revised: false, fixes: [], open_issues: [] },
-  meta: { provider: 'cloud' },
+  meta: meta('cloud', 'openai/gpt-oss-120b'),
   content: {
     headline: '37 organisations were targeted through VPN gateways; patching is the priority',
     key_points: [

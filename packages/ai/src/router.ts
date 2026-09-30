@@ -153,6 +153,8 @@ export function createRouter(redis: Redis) {
     await waitForCloudSpacing();
 
     let reason: FallbackReason = 'network';
+    // The last thing the cloud provider said, kept so a local failure cannot hide it.
+    let cloudError = '';
 
     /*
      * First request + two transport retries.
@@ -177,6 +179,7 @@ export function createRouter(redis: Redis) {
          */
         if (e instanceof RateLimitError) {
   reason = 'rate_limit';
+  cloudError = e.message;
 
   await sleep(
     Math.max(
@@ -194,6 +197,7 @@ export function createRouter(redis: Redis) {
         if (!(e instanceof TransportError)) {
           throw e;
         }
+        cloudError = e.message;
 
         /*
          * Exponential backoff:
@@ -212,12 +216,27 @@ export function createRouter(redis: Redis) {
      * Local receives the ORIGINAL unmasked request.
      * It never leaves the host.
      */
-    return onLocal(req, reason);
+    try {
+      return await onLocal(req, reason);
+    } catch (localError) {
+      // Both providers failed. Report both, so the cloud reason (a wrong model id, a bad key)
+      // is not replaced by the local one ("fetch failed" when Ollama is simply not running).
+      if (localError instanceof TransportError && cloudError) {
+        throw new TransportError(
+          `Cloud model failed: ${plainReason(cloudError)} | Local fallback also failed: ${localError.message}`,
+        );
+      }
+      throw localError;
+    }
   }
 
   return {
     call,
   };
 }
+
+/** Provider errors arrive as `404 {"error":{"message":"..."}}`. Keep the human sentence. */
+const plainReason = (s: string) =>
+  (s.match(/"message":"((?:[^"\\]|\\.)*)"/)?.[1] ?? s).slice(0, 240);
 
 export type Router = ReturnType<typeof createRouter>;

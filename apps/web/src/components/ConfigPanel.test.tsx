@@ -29,7 +29,7 @@ describe('ConfigPanel (SRS §10.2)', () => {
     const onGenerate = vi.fn();
     render(<ConfigPanel formats={FORMATS} busy={false} onGenerate={onGenerate} />);
     await user.selectOptions(toneOf('LinkedIn post'), 'conversational');
-    await user.selectOptions(toneOf('LinkedIn post'), 'same as global');
+    await user.selectOptions(toneOf('LinkedIn post'), 'Default');
     await user.click(screen.getByRole('button', { name: 'Generate 3' }));
     expect(onGenerate.mock.calls[0][0].formats[2]).toEqual({ format_id: 'linkedin_post' });
   });
