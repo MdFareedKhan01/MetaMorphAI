@@ -11,7 +11,7 @@ export function noteSystem() {
   d.node('api', 220, y, w, h, 'API', ['Express 5 · Zod 4', 'JWT · 3 roles', 'ingest + extract'], 'core');
   d.node('q', 420, y, w, h, 'QUEUE', ['Redis 7 · BullMQ', '1 job per format', '3 in flight'], 'step');
   d.node('wk', 620, y, w, h, 'WORKER', ['runs the engine:', 'router = gate,', 'verify, repair'], 'gate');
-  d.node('m', 820, y, 160, h, 'MODELS', ['Groq · Llama 3.3', 'Ollama · Qwen 2.5', 'restricted → local'], 'model');
+  d.node('m', 820, y, 160, h, 'MODELS', ['Gemini Flash-Lite', 'Ollama · Qwen 2.5', 'restricted → local'], 'model');
   d.arrow([[195, 89], [220, 89]], { color: G, width: 2.5 });
   d.arrow([[395, 89], [420, 89]], { color: G, width: 2.5 });
   d.arrow([[595, 89], [620, 89]], { color: G, width: 2.5 });
@@ -36,7 +36,7 @@ export function noteAi() {
   d.arrow([[490, 73], [510, 73]], { color: G, width: 2.5 });
   d.arrow([[735, 73], [755, 73]], { color: G, width: 2.5 });
   // row 2 : right → left
-  d.node('n5', X[3], 172, w, h, '5 MODEL CALL', ['Groq llama-3.3-70b', 'Ollama qwen2.5:7b', 'temperature 0, JSON'], 'model');
+  d.node('n5', X[3], 172, w, h, '5 MODEL CALL', ['Gemini Flash-Lite', 'Ollama qwen2.5:7b', 'temperature 0, JSON'], 'model');
   d.node('n6', X[2], 172, w, h, '6 PARSE', ['Zod safeParse', 'invalid → error', 'no repair'], 'step', { lineColors: { 1: '#B91C1C', 2: '#B91C1C' } });
   d.node('n7', X[1], 172, w, h, '7 VERIFY', ['① refs exist', '② grounding ≥ 0.5', '③ identifiers ④ hedges'], 'core');
   d.node('n8', X[0], 172, w, h, '8 REPAIR × 1', ['only if findings', 'failing claims + spans', 'then re-verify'], 'gate');

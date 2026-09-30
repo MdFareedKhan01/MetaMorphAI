@@ -24,8 +24,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const STUB_MODEL = 'offline-stub (no model ran)';
 let stubWarned = false;
 
-const NO_KEY = 'GROQ_API_KEY is not set in .env, so no cloud model was called.';
-const hasKey = () => !!process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== 'gsk_placeholder';
+// The engine's cloud provider is chosen by AI_PROVIDER (groq by default, as in packages/ai/src/env.ts).
+const keyName = () => (process.env.AI_PROVIDER === 'gemini' ? 'GEMINI_API_KEY' : 'GROQ_API_KEY');
+const PLACEHOLDERS = ['gsk_placeholder', 'gemini_placeholder'];
+const hasKey = () => { const k = process.env[keyName()]; return !!k && !PLACEHOLDERS.includes(k); };
+const noKey = () => `${keyName()} is not set in .env, so no cloud model was called.`;
 
 /** One readable sentence for a card and an audit row. Never includes anything but the provider's message. */
 const reasonOf = (e: unknown) =>
@@ -73,7 +76,7 @@ export const engine = {
     raw_content: string;
     source_hash: string;
   }) {
-    let reason = NO_KEY;
+    let reason = noKey();
     try {
       if (hasKey()) {
         return await ai.extractCanonical(source);
@@ -118,7 +121,7 @@ export const engine = {
 
   async runFormat(params: RunFormatParams) {
     await params.onPhase?.('running');
-    let reason = NO_KEY;
+    let reason = noKey();
     try {
       if (hasKey()) {
         const res = await ai.runFormat({

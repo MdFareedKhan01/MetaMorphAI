@@ -42,12 +42,12 @@ export function systemArch() {
   // engine
   d.node('engine', 100, 570, 1950, 125, 'ENGINE · packages/ai — imported by the API and by the worker', [
     'router.call() is the only way a prompt leaves: restricted → Ollama · rate limit → Ollama · internal → masked user message',
-    'extractCanonical · runFormat · verifyClaims · reviseClaims — GroqAdapter and OllamaAdapter behind one LLMAdapter interface',
+    'extractCanonical · runFormat · verifyClaims · reviseClaims — GeminiAdapter and OllamaAdapter behind one LLMAdapter interface',
   ], 'gate');
 
   // models
-  d.node('groq', 100, 770, 940, 120, 'GROQ · cloud', [
-    'llama-3.3-70b-versatile — public and internal sources',
+  d.node('gemini', 100, 770, 940, 120, 'GEMINI · cloud', [
+    'GEMINI_MODEL — public and internal sources',
     '429 or three transport failures → Ollama',
   ], 'model');
   d.node('ollama', 1110, 770, 940, 120, 'OLLAMA · on the host', [

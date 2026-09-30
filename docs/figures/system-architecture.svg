@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="2100" height="990" viewBox="0 0 2100 990" role="img" aria-label="System architecture">
   <title>System architecture</title>
-  <desc>Browser, API and worker sharing PostgreSQL and Redis, both calling one engine whose router decides between Groq in the cloud and Ollama on the host.</desc>
+  <desc>Browser, API and worker sharing PostgreSQL and Redis, both calling one engine whose router decides between Gemini in the cloud and Ollama on the host.</desc>
   <rect width="2100" height="990" fill="#FFFFFF"/>
   <rect x="30" y="20" width="2040" height="150" rx="18" fill="#F7F9FB" stroke="#C7D3E0" stroke-width="2"/>
   <rect x="30" y="20" width="46" height="150" rx="18" fill="#0F2B46"/>
@@ -47,10 +47,10 @@
   <rect x="100" y="570" width="1950" height="125" rx="14" fill="#FDEDE6" stroke="#C2410C" stroke-width="4"/>
   <text x="120" y="610.905" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#7A2E0A">ENGINE · packages/ai — imported by the API and by the worker</text>
   <text x="120" y="646.625" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">router.call() is the only way a prompt leaves: restricted → Ollama · rate limit → Ollama · internal → masked user message</text>
-  <text x="120" y="674.345" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">extractCanonical · runFormat · verifyClaims · reviseClaims — GroqAdapter and OllamaAdapter behind one LLMAdapter interface</text>
+  <text x="120" y="674.345" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">extractCanonical · runFormat · verifyClaims · reviseClaims — GeminiAdapter and OllamaAdapter behind one LLMAdapter interface</text>
   <rect x="100" y="770" width="940" height="120" rx="14" fill="#F3F0FF" stroke="#6D28D9" stroke-width="3"/>
-  <text x="120" y="808.405" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#3B1A7A">GROQ · cloud</text>
-  <text x="120" y="844.125" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">llama-3.3-70b-versatile — public and internal sources</text>
+  <text x="120" y="808.405" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#3B1A7A">GEMINI · cloud</text>
+  <text x="120" y="844.125" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">GEMINI_MODEL — public and internal sources</text>
   <text x="120" y="871.845" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">429 or three transport failures → Ollama</text>
   <rect x="1110" y="770" width="940" height="120" rx="14" fill="#F3F0FF" stroke="#6D28D9" stroke-width="3"/>
   <text x="1130" y="808.405" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#3B1A7A">OLLAMA · on the host</text>

@@ -19,7 +19,7 @@ describe('engine bridge: the offline stub', () => {
   afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
   it('produces content that fits every format schema, so no card can crash on it', async () => {
-    vi.stubEnv('GROQ_API_KEY', '');
+    vi.stubEnv('AI_PROVIDER', 'gemini'); vi.stubEnv('GEMINI_API_KEY', '');
     const { canonical } = await engine.extractCanonical(source);
     expect(Canonical.safeParse(canonical).success).toBe(true);
     for (const formatId of FORMATS) {
@@ -30,18 +30,28 @@ describe('engine bridge: the offline stub', () => {
   }, 20_000);
 
   it('says it is unverified, names itself, and states why it ran', async () => {
-    vi.stubEnv('GROQ_API_KEY', '');
+    vi.stubEnv('AI_PROVIDER', 'gemini'); vi.stubEnv('GEMINI_API_KEY', '');
     const { canonical } = await engine.extractCanonical(source);
     const r = await engine.runFormat({ formatId: 'linkedin_post', source, canonical, config });
     expect(r.meta.model).toMatch(/^offline-stub/);
     expect(r.grounding_score).toBe(0);
     expect(r.verification.passed).toBe(false);
     expect(r.claims.every((c) => c.grounded === false)).toBe(true);
-    expect(r.verification.open_issues[0].detail).toContain('GROQ_API_KEY is not set');
+    expect(r.verification.open_issues[0].detail).toContain('GEMINI_API_KEY is not set');
+  });
+
+  it('names the key of the provider that is selected', async () => {
+    vi.stubEnv('AI_PROVIDER', 'groq'); vi.stubEnv('GROQ_API_KEY', '');
+    const { meta } = await engine.extractCanonical(source);
+    expect((meta as { reason: string }).reason).toContain('GROQ_API_KEY is not set');
+
+    vi.stubEnv('AI_PROVIDER', 'gemini'); vi.stubEnv('GEMINI_API_KEY', 'gemini_placeholder');
+    const again = await engine.extractCanonical(source);
+    expect((again.meta as { reason: string }).reason).toContain('GEMINI_API_KEY is not set');
   });
 
   it('shows the provider\'s own reason when a real model call fails', async () => {
-    vi.stubEnv('GROQ_API_KEY', 'gsk_test_key');
+    vi.stubEnv('AI_PROVIDER', 'gemini'); vi.stubEnv('GEMINI_API_KEY', 'AIza_test_key');
     ai.extractCanonical.mockRejectedValue(new Error('Cloud model failed: The model `x` does not exist | Local fallback also failed: fetch failed'));
     ai.runFormat.mockRejectedValue(new Error('Cloud model failed: The model `x` does not exist | Local fallback also failed: fetch failed'));
 
@@ -50,13 +60,13 @@ describe('engine bridge: the offline stub', () => {
 
     const r = await engine.runFormat({ formatId: 'advisory', source, canonical, config });
     expect(r.verification.open_issues[0].detail).toContain('The model `x` does not exist');
-    expect(r.verification.open_issues[0].detail).not.toContain('GROQ_API_KEY is not set');
+    expect(r.verification.open_issues[0].detail).not.toContain('GEMINI_API_KEY is not set');
   });
 
   it('never hides a sovereignty failure behind the stub', async () => {
-    vi.stubEnv('GROQ_API_KEY', '');
+    vi.stubEnv('AI_PROVIDER', 'gemini'); vi.stubEnv('GEMINI_API_KEY', '');
     const { canonical } = await engine.extractCanonical(source);
-    vi.stubEnv('GROQ_API_KEY', 'gsk_test_key');
+    vi.stubEnv('AI_PROVIDER', 'gemini'); vi.stubEnv('GEMINI_API_KEY', 'AIza_test_key');
     class EgressBlocked extends Error {}
     ai.runFormat.mockRejectedValue(new EgressBlocked('restricted content reached the cloud adapter'));
     await expect(engine.runFormat({ formatId: 'advisory', source: { ...source, classification: 'restricted' }, canonical, config }))

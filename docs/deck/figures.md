@@ -52,7 +52,7 @@ flowchart TB
     E1 --> E2 --> E3 --> E4 --> E5
   end
 
-  CLOUD[("<b>CLOUD · GROQ</b><br/>public and internal")]
+  CLOUD[("<b>CLOUD · GEMINI</b><br/>public and internal")]
   LOCAL[("<b>ON-DEVICE · OLLAMA</b><br/>restricted, always")]
   CACHE[("<b>CACHED PACK</b><br/>no network, degraded")]
 
@@ -109,7 +109,7 @@ flowchart TB
   subgraph PER["PER FORMAT, PER ARTEFACT"]
     C["<b>3 · BUILD PROMPT</b><br/>FormatSpec: role, plan, rules, constraints<br/>buildPrompt: system + canonical block<br/>Draft 2020-12 schema inside the system<br/>source text never enters the system role"]
     D{"<b>4 · ROUTER</b><br/><b>EGRESS GATE</b>"}
-    CL["<b>CLOUD ADAPTER</b><br/>groq-sdk generateContent<br/>temperature 0.2<br/>responseMimeType json<br/>throws EgressBlocked if restricted"]
+    CL["<b>CLOUD ADAPTER</b><br/>@google/genai generateContent<br/>temperature 0<br/>responseMimeType json + responseSchema"]
     LO["<b>ON-DEVICE ADAPTER</b><br/>Ollama POST /api/chat, stream false<br/>format: JSON Schema<br/>qwen2.5:7b, num_ctx 8192<br/>AbortSignal.timeout"]
     V["<b>6 · VERIFY — no model</b><br/>parseModelJson takes outermost braces<br/>regex CVE, IPv4, SHA-256, domain, semver<br/>hedge lexicon, English + Devanagari<br/>postHocRefs lexical overlap 0.5 or more"]
     REP["<b>REPAIR</b><br/>revisionNote(prev, findings)<br/>one call, hard cap of two"]

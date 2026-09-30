@@ -31,7 +31,7 @@
   <polygon points="755,73 740,81 740,65" fill="#5A6B7B"/>
   <rect x="755" y="172" width="225" height="118" rx="14" fill="#F3F0FF" stroke="#6D28D9" stroke-width="3"/>
   <text x="767" y="202.54999999999998" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#3B1A7A">5 MODEL CALL</text>
-  <text x="767" y="231.35" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="16" fill="#4C3A7A">Groq llama-3.3-70b</text>
+  <text x="767" y="231.35" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="16" fill="#4C3A7A">Gemini Flash-Lite</text>
   <text x="767" y="252.15" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="16" fill="#4C3A7A">Ollama qwen2.5:7b</text>
   <text x="767" y="272.95" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="16" fill="#4C3A7A">temperature 0, JSON</text>
   <rect x="510" y="172" width="225" height="118" rx="14" fill="#FFFFFF" stroke="#94A7BA" stroke-width="2"/>

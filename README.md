@@ -2,7 +2,7 @@
 
 MetaMorph.AI transforms one trusted source into audience-specific artefacts while preserving source spans, claims, verification results, and audit history.
 
-The repository is a TypeScript Turborepo monorepo. The cloud model provider is **Groq**. The local model provider is **Ollama**.
+The repository is a TypeScript Turborepo monorepo. The cloud model provider is **Google Gemini** (Groq remains available); `AI_PROVIDER` chooses. The local model provider is **Ollama**.
 
 
 ## Repository Structure
@@ -13,7 +13,7 @@ apps/
   web/                    React + Vite frontend
 packages/
   shared/                 Zod contracts shared by every package
-  ai/                     Groq/Ollama routing, extraction, generation, verification
+  ai/                     Gemini/Ollama routing, extraction, generation, verification
 prisma/
   schema.prisma           PostgreSQL schema
   append-only.sql         Audit-log protection trigger
@@ -34,7 +34,7 @@ Express API ---- PostgreSQL/Prisma
         |
         +-------- Redis/BullMQ -------- Worker
                                       |
-                                      +-- Groq for public/internal sources
+                                      +-- Gemini for public/internal sources
                                       +-- Ollama for restricted sources or fallback
 ```
 
@@ -45,7 +45,7 @@ The API accepts source documents, extracts canonical facts, creates generation b
 - Node.js 22 LTS or newer
 - npm 10 or newer
 - Docker Desktop with the WSL 2 backend on Windows
-- A Groq API key for cloud generation: [console.groq.com/keys](https://console.groq.com/keys)
+- A Gemini API key for cloud generation: [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 - Ollama is optional for local restricted-source generation
 
 ## Start From A Fresh Clone
@@ -61,11 +61,12 @@ cp .env.example .env
 
 On PowerShell, use `Copy-Item .env.example .env` instead of `cp`.
 
-Open `.env` and set a real Groq key and a long JWT secret:
+Open `.env` and set a real Gemini key and a long JWT secret:
 
 ```dotenv
-GROQ_API_KEY=your-groq-api-key
-CLOUD_MODEL=llama-3.3-70b-versatile
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-2.5-flash-lite
 JWT_SECRET=replace-with-a-long-random-string
 ```
 
@@ -91,13 +92,14 @@ The seeded demo users are `operator`, `reviewer`, and `admin`, all with the pass
 
 ## Providers
 
-### Groq cloud provider
+### Gemini cloud provider
 
-Groq is used for `public` sources and for `internal` sources after configured sensitive terms are redacted. Configure:
+Gemini is used for `public` sources and for `internal` sources after configured sensitive terms are redacted. Configure:
 
 ```dotenv
-GROQ_API_KEY=your-groq-api-key
-CLOUD_MODEL=llama-3.3-70b-versatile
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-2.5-flash-lite
 CLOUD_RPM=10
 ```
 
@@ -105,7 +107,7 @@ Without a valid key, the server uses an explicitly labelled offline stub. The st
 
 ### Ollama local provider
 
-Ollama is used for `restricted` sources and as the local fallback when Groq is unavailable or rate-limited:
+Ollama is used for `restricted` sources and as the local fallback when Gemini is unavailable or rate-limited:
 
 ```bash
 ollama pull qwen2.5:7b
@@ -120,7 +122,7 @@ LOCAL_NUM_CTX=8192
 LOCAL_TIMEOUT_MS=180000
 ```
 
-Restricted content never goes to Groq. Internal content is redacted before it is sent to Groq and restored after the response.
+Restricted content never goes to Gemini. Internal content is redacted before it is sent to Gemini and restored after the response.
 
 ## Environment Variables
 
@@ -131,7 +133,8 @@ Restricted content never goes to Groq. Internal content is redacted before it is
 | Database | `DATABASE_URL` | PostgreSQL connection used by Prisma |
 | Queue | `REDIS_URL` | Redis connection used by BullMQ and streams |
 | API | `PORT`, `WEB_ORIGIN`, `JWT_SECRET` | HTTP port, CORS origin, and token signing |
-| Groq | `GROQ_API_KEY`, `CLOUD_MODEL`, `CLOUD_RPM` | Cloud generation |
+| Gemini | `AI_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `CLOUD_RPM` | Cloud generation |
+| Groq (alternative) | `AI_PROVIDER=groq`, `GROQ_API_KEY`, `CLOUD_MODEL` | Cloud generation |
 | Ollama | `OLLAMA_URL`, `LOCAL_MODEL`, `LOCAL_NUM_CTX`, `LOCAL_TIMEOUT_MS` | Local generation |
 | AI policy | `REDACT_TERMS`, `DEMO_PERTURB` | Redaction and verifier demo controls |
 
@@ -167,7 +170,7 @@ The repository separates deployment into four runtime services:
 3. **Worker:** run one or more worker processes with access to the same PostgreSQL and Redis instances.
 4. **Data services:** use managed PostgreSQL and Redis in production; do not use the Docker Compose data volumes as a production database.
 
-Groq is an external cloud dependency for public and internal generation. Ollama must run on infrastructure controlled by the deployment when restricted generation is required. Configure CORS with the deployed web origin, use a strong `JWT_SECRET`, keep secrets in the deployment platform's secret store, and run `npm run db:setup` against the intended database before starting API traffic.
+Gemini is an external cloud dependency for public and internal generation. Ollama must run on infrastructure controlled by the deployment when restricted generation is required. Configure CORS with the deployed web origin, use a strong `JWT_SECRET`, keep secrets in the deployment platform's secret store, and run `npm run db:setup` against the intended database before starting API traffic.
 
 The current repository provides local Docker Compose infrastructure and application start scripts; cloud-specific containers, IaC, TLS termination, secret-store configuration, migrations, backups, and autoscaling remain deployment-environment responsibilities.
 
@@ -177,7 +180,7 @@ The current repository provides local Docker Compose infrastructure and applicat
 | --- | --- |
 | `P1001: Can't reach database server` | Start Docker Desktop and run `docker compose up -d`; verify `DATABASE_URL` matches `PG_PORT`. |
 | `P1000: Authentication failed` | Check the PostgreSQL username, password, database, and port in `.env`. |
-| Groq calls fall back to the offline stub | Set a valid `GROQ_API_KEY` and confirm `CLOUD_MODEL` is a model available to your Groq account. |
+| Gemini calls fall back to the offline stub | Set `AI_PROVIDER` and the matching key (`GEMINI_API_KEY` or `GROQ_API_KEY`), and confirm `GEMINI_MODEL` (or `CLOUD_MODEL` for Groq) is a model your account can use. |
 | Restricted generation fails | Install Ollama, pull the configured model, and confirm `OLLAMA_URL` is reachable. |
 | `Cannot find module '@ps154/shared'` | Run `npm install` from the repository root. |
 | Prisma Client is not initialized | Run `npm install` or `npx prisma generate` from the repository root. |

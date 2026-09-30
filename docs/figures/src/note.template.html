@@ -61,8 +61,8 @@
   <figcaption>Figure 2 — From source to a ready or flagged artefact. Steps 1–2 run once per source; steps 3–8 run once per artefact.</figcaption>
 </figure>
 <p><b>Extraction</b> reads the source as delimited data in the user role and returns a fact index — severity, entities, events, systems, indicators, key facts (<i>fact</i> or <i>inference</i>) and recommendations — each item citing span ids. Any id the model invents is dropped. <b>Generation</b> uses one prompt and one schema per format (advisory, executive summary, LinkedIn post); every assertion is a claim node <code>{text, source_refs, status}</code>. Configuration (audience, tone, detail, language) is merged per format, so one artefact can be conversational while another stays formal.</p>
-<p><b>Routing</b> is decided in code before any call. <code>restricted</code> goes to the on-device model (Ollama, <code>qwen2.5:7b</code>). Otherwise the cloud model (Groq, <code>llama-3.3-70b-versatile</code>, temperature 0) is used, with three tries, falling back to Ollama on a rate limit or repeated failure. Output must satisfy the format’s JSON Schema.</p>
-<p><b>Verification is plain code — no second model.</b> Four checks run on every claim: its <i>source references exist</i>; its <i>lexical overlap</i> with the cited sentence is at least 0.5; every <i>number, CVE, IP, domain and hash</i> in it appears in the cited sentence; and any <i>hedge</i> in the cited sentence (<i>possibly, potentially, consistent with…</i>) survives. If anything fails, <b>exactly one</b> targeted repair call carries the specific findings and only the cited sentences; the claims are re-checked and a second repair is never made. What still fails is shown on the card as an open flag, and a reviewer approves or rejects. A hard cap of two model calls per artefact is enforced in code and tested.</p>
+<p><b>Routing</b> is decided in code before any call. <code>restricted</code> goes to the on-device model (Ollama, <code>qwen2.5:7b</code>). Otherwise the cloud model (Gemini, <code>GEMINI_MODEL</code>, temperature 0) is used, with three tries, falling back to Ollama on a rate limit or repeated failure. Output must satisfy the format’s JSON Schema.</p>
+<p><b>Verification is plain code — no second model.</b> Five checks run on every claim: its <i>source references exist</i>; its <i>lexical overlap</i> with the cited sentence is at least 0.5; every <i>number, CVE, IP, domain and hash</i> in it appears in the cited sentence; any <i>hedge</i> in the cited sentence (<i>possibly, potentially, consistent with…</i>) survives; and the claim is not <i>cut off mid-sentence</i>. If anything fails, <b>exactly one</b> targeted repair call carries the specific findings and only the cited sentences; the claims are re-checked and a second repair is never made. What still fails is shown on the card as an open flag, and a reviewer approves or rejects. A hard cap of two model calls per artefact is enforced in code and tested.</p>
 
 <h2>4  Security and integrity</h2>
 <table class="keep">
@@ -101,7 +101,7 @@
 </ul>
 
 <h2>7  Technology</h2>
-<p>TypeScript 6 · Node 22 · React 19 · Vite 8 · Tailwind 4 · Express 5 · <code>ws</code> · Zod 4 · BullMQ 6 · Redis 7 · PostgreSQL 16 · Prisma 6 · Groq (Llama 3.3 70B) · Ollama (Qwen 2.5 7B) · <code>unpdf</code> · <code>mammoth</code> · Turborepo · Vitest · GitHub Actions. Source and setup: <b>github.com/MdFareedKhan01/sih_ps154</b> — full detail in <code>docs/system-documentation.md</code>.</p>
+<p>TypeScript 6 · Node 22 · React 19 · Vite 8 · Tailwind 4 · Express 5 · <code>ws</code> · Zod 4 · BullMQ 6 · Redis 7 · PostgreSQL 16 · Prisma 6 · Gemini (Flash-Lite) · Ollama (Qwen 2.5 7B) · <code>unpdf</code> · <code>mammoth</code> · Turborepo · Vitest · GitHub Actions. Source and setup: <b>github.com/MdFareedKhan01/sih_ps154</b> — full detail in <code>docs/system-documentation.md</code>.</p>
 
 </body>
 </html>

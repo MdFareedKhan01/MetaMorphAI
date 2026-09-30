@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="2100" height="1080" viewBox="0 0 2100 1080" role="img" aria-label="AI engine flowchart">
   <title>AI engine flowchart</title>
-  <desc>Ingest and split, extract the canonical object, build the prompt, route through the egress gate to Groq or Ollama, parse, verify with four deterministic checks, and repair at most once.</desc>
+  <desc>Ingest and split, extract the canonical object, build the prompt, route through the egress gate to Gemini or Ollama, parse, verify with five deterministic checks, and repair at most once.</desc>
   <rect width="2100" height="1080" fill="#FFFFFF"/>
   <rect x="30" y="20" width="2040" height="265" rx="18" fill="#F7F9FB" stroke="#C7D3E0" stroke-width="2"/>
   <rect x="30" y="20" width="46" height="265" rx="18" fill="#0F2B46"/>
@@ -55,9 +55,9 @@
   <text x="1140" y="523.205" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">internal → Redactor masks the user</text>
   <text x="1140" y="550.9250000000001" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#7A3B1E">message: IP · URL · email · domain</text>
   <rect x="580" y="345" width="460" height="105" rx="14" fill="#F3F0FF" stroke="#6D28D9" stroke-width="3"/>
-  <text x="600" y="375.905" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#3B1A7A">5a  GROQ · cloud</text>
-  <text x="600" y="411.625" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">llama-3.3-70b-versatile · temperature 0</text>
-  <text x="600" y="439.345" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">json_schema strict · 3 tries, 500·2ⁿ ms</text>
+  <text x="600" y="375.905" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#3B1A7A">5a  GEMINI · cloud</text>
+  <text x="600" y="411.625" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">GEMINI_MODEL · temperature 0</text>
+  <text x="600" y="439.345" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">responseSchema · 3 tries, 500·2ⁿ ms</text>
   <rect x="580" y="485" width="460" height="105" rx="14" fill="#F3F0FF" stroke="#6D28D9" stroke-width="3"/>
   <text x="600" y="515.905" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#3B1A7A">5b  OLLAMA · on the host</text>
   <text x="600" y="551.625" text-anchor="start" font-family="Segoe UI, Arial, Helvetica, sans-serif" font-size="21" fill="#4C3A7A">qwen2.5:7b · num_ctx 8192 · format = schema</text>

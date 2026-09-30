@@ -53,9 +53,9 @@ export function aiFlow() {
     'internal → Redactor masks the user',
     'message: IP · URL · email · domain',
   ], 'gate');
-  d.node('groq', 580, 345, 460, 105, '5a  GROQ · cloud', [
-    'llama-3.3-70b-versatile · temperature 0',
-    'json_schema strict · 3 tries, 500·2ⁿ ms',
+  d.node('gemini', 580, 345, 460, 105, '5a  GEMINI · cloud', [
+    'GEMINI_MODEL · temperature 0',
+    'responseSchema · 3 tries, 500·2ⁿ ms',
   ], 'model');
   d.node('ollama', 580, 485, 460, 105, '5b  OLLAMA · on the host', [
     'qwen2.5:7b · num_ctx 8192 · format = schema',

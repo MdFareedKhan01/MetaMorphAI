@@ -5,7 +5,7 @@ Everything the system is built from, with the version it actually runs on.
 **Source of truth:** versions are read from `package-lock.json` (resolved), `package.json`,
 `docker-compose.yml`, `.nvmrc` and `.github/workflows/ci.yml` as of **29 September 2026**.
 They are not copied from the design guides, several of which named technologies the team
-later replaced (Gemini became Groq, for example).
+later replaced (the cloud model moved from Gemini to Groq, and on 30 September back to Gemini, for example).
 
 ---
 
@@ -18,7 +18,7 @@ later replaced (Gemini became Groq, for example).
 | **API** | Express 5 · `ws` WebSockets · Zod 4 validation · JWT + bcrypt |
 | **Queue and events** | BullMQ 6 · Redis 7 (queue, rate limit, locks, Streams) |
 | **Database** | PostgreSQL 16 · Prisma 6 |
-| **AI** | Groq (`llama-3.3-70b-versatile`) in the cloud · Ollama (`qwen2.5:7b`) on the host |
+| **AI** | Google Gemini (`gemini-2.5-flash-lite` by default; Groq selectable) in the cloud · Ollama (`qwen2.5:7b`) on the host |
 | **Verification** | Deterministic TypeScript: regular expressions, a hedge lexicon, lexical overlap |
 | **Documents in** | `unpdf` (PDF, per page) · `mammoth` (DOCX) · `Intl.Segmenter` (sentences) |
 | **Integrity** | SHA-256 hash-chained audit log · PostgreSQL append-only trigger |
@@ -29,7 +29,7 @@ later replaced (Gemini became Groq, for example).
 
 > **TypeScript** · **React 19 + Vite 8** · **Express 5** · **BullMQ + Redis Streams** ·
 > **PostgreSQL + Prisma** · **Zod (one schema, both sides of the wire)** ·
-> **Groq · Llama 3.3 70B** · **Ollama · Qwen 2.5 7B** · **Turborepo + Vitest**
+> **Google Gemini Flash-Lite** · **Ollama · Qwen 2.5 7B** · **Turborepo + Vitest**
 
 ---
 
@@ -94,8 +94,9 @@ later replaced (Gemini became Groq, for example).
 
 | Technology | Version | Role |
 | --- | --- | --- |
-| **Groq** via `groq-sdk` | 1.6.0 | Cloud inference for `public` and `internal` sources |
-| **Llama 3.3 70B Versatile** | `llama-3.3-70b-versatile` (default `CLOUD_MODEL`) | The cloud model. `temperature 0`, strict `json_schema` output, up to 8192 completion tokens |
+| **Google Gemini** via `@google/genai` | 2.24.0 | Cloud inference for `public` and `internal` sources (`AI_PROVIDER=gemini`) |
+| **Groq** via `groq-sdk` | 1.6.0 | The alternative cloud provider (`AI_PROVIDER=groq`, the code default) |
+| **Gemini Flash-Lite** | `gemini-2.5-flash-lite` (default `GEMINI_MODEL`; set the exact id your key lists) | The cloud model. `temperature 0`, JSON output constrained by `responseSchema` |
 | **Ollama** | host install, `OLLAMA_URL` | Local inference for `restricted` sources and as fallback |
 | **Qwen 2.5 7B** | `qwen2.5:7b` (default `LOCAL_MODEL`) | The on-device model. `num_ctx 8192`, `format` = JSON Schema, 180 s timeout |
 | Zod → JSON Schema | `z.toJSONSchema` (Zod 4) | Each format's output schema is generated, never hand-typed, and reused to validate the reply |
@@ -103,7 +104,7 @@ later replaced (Gemini became Groq, for example).
 | Regular expressions and a lexicon | — | CVE, IPv4, domain (including `[.]` defanging), MD5/SHA-1/SHA-256, number extraction; an English and Devanagari hedge lexicon |
 | Lexical overlap | — | Term overlap ≥ 0.5 between a claim and its cited sentence; also assigns citations to claims that lack one. **No embeddings, no vector store** |
 
-**Model access:** the cloud adapter is `GroqAdapter`; the local adapter is `OllamaAdapter`
+**Model access:** the cloud adapters are `GeminiAdapter` and `GroqAdapter`, chosen by `AI_PROVIDER`; the local adapter is `OllamaAdapter`
 (plain `fetch` to `/api/chat`). Both implement one `LLMAdapter` interface, and the router is
 the only way a prompt leaves the package.
 
@@ -186,6 +187,3 @@ Each of these was proposed at some point and declined, for a stated reason.
 | --- | --- |
 | `archiver` 8.0.0 | Declared in `apps/server`; the pack export it was meant for is not built |
 | `packages/ai/src/claims.ts`, `grounding.ts` | Not imported by anything |
-| `apps/web/src/shared-temp.ts` | A stand-in for types that `@ps154/shared` now exports; still imported by several components |
-| `@google/genai` (Gemini) | Removed from the lockfile. Some guides and the SRS still name Gemini |
-| `GEMINI_API_KEY` | Removed from `.env.example`; older guides still mention it |

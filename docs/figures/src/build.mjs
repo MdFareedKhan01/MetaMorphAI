@@ -13,8 +13,8 @@ const CHROME = process.env.CHROME ?? 'C:/Program Files/Google/Chrome/Application
 const FIGURES = {
   'note-system': { png: false, make: noteSystem, title: 'System overview', desc: 'Browser, API, queue, worker with engine, and models, backed by PostgreSQL.' },
   'note-ai': { png: false, make: noteAi, title: 'AI engine overview', desc: 'Eight steps from ingest to a ready or flagged artefact.' },
-  'system-architecture': { make: systemArch, title: 'System architecture', desc: 'Browser, API and worker sharing PostgreSQL and Redis, both calling one engine whose router decides between Groq in the cloud and Ollama on the host.' },
-  'ai-system-flowchart': { make: aiFlow, title: 'AI engine flowchart', desc: 'Ingest and split, extract the canonical object, build the prompt, route through the egress gate to Groq or Ollama, parse, verify with four deterministic checks, and repair at most once.' },
+  'system-architecture': { make: systemArch, title: 'System architecture', desc: 'Browser, API and worker sharing PostgreSQL and Redis, both calling one engine whose router decides between Gemini in the cloud and Ollama on the host.' },
+  'ai-system-flowchart': { make: aiFlow, title: 'AI engine flowchart', desc: 'Ingest and split, extract the canonical object, build the prompt, route through the egress gate to Gemini or Ollama, parse, verify with five deterministic checks, and repair at most once.' },
 };
 
 const [outDir = '.', ...only] = process.argv.slice(2);

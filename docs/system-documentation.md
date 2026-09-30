@@ -21,7 +21,7 @@ Requirements are cited as FR-nn, NFR-nn and AC-nn, as in the SRS.
 **How it was verified.** Full read of `packages/ai`, `packages/shared`, `apps/server`, `prisma`
 and the web app; the automated suite (61 tests, all passing); an end-to-end run against a live
 PostgreSQL, Redis, API, worker and web server; and two targeted reproductions of defects
-(KI-01, KI-06). **Not verified by the author:** any run against a real language model (no Groq
+(KI-01, KI-06). **Not verified by the author:** any run against a real language model (no Gemini
 key or Ollama was available), PDF and DOCX uploads, and the UI clicked through in a browser.
 
 ---
@@ -54,7 +54,7 @@ key or Ollama was available), PDF and DOCX uploads, and the UI clicked through i
 | Capability | State | Evidence |
 | --- | --- | --- |
 | Ingest pasted text, PDF, DOCX, TXT, MD; split into sentence spans with page numbers | Working | `routes/sources.ts`, `splitSpans`; text path exercised end to end |
-| Extract a cited fact index ("canonical object") once per source | Working with a model; stub without | `extract.ts`; needs `GROQ_API_KEY` (KI-03) |
+| Extract a cited fact index ("canonical object") once per source | Working with a model; stub without | `extract.ts`; needs the key for `AI_PROVIDER` (`GEMINI_API_KEY` or `GROQ_API_KEY`) (KI-03) |
 | Generate **advisory**, **executive summary**, **LinkedIn post** from the fact index | Working with a model | `generate.ts`, benchmarks in §13 |
 | Batch of up to six formats, per-format configuration overrides | Working | smoke test, AC-11 |
 | Three concurrent workers, live progress over WebSocket, resume after a drop | Working | smoke test, AC-13 |
@@ -84,7 +84,7 @@ key or Ollama was available), PDF and DOCX uploads, and the UI clicked through i
 | --- | --- |
 | Every sentence carries the source spans it came from; clicking it highlights the passage | "Seven artefact types" — five are selectable, three are built |
 | Verification is deterministic code, with no second model | "Six generation parameters" — there are four |
-| Four checks: source references exist, lexical grounding ≥ 0.5, identifiers appear in the cited span, source hedges are preserved | "Severity, lengths, counts, emoji, script and durations are checked in code" |
+| Five checks: source references exist, lexical grounding ≥ 0.5 (against each cited span or all of them together), identifiers appear in the cited span, source hedges are preserved, and the claim is not truncated (`quality`, added 30 Sep) | "Severity, lengths, counts, emoji, script and durations are checked in code" |
 | At most two model calls per artefact, enforced in code and covered by a test | "Internal sources are masked before they leave" without qualification |
 | Restricted sources are routed to the on-device model by a check in code, before an adapter is chosen. Every prompt leaves through one function, `router.call()` | "The worker holds the only path out of the host" — the API also calls the engine, for extraction. The single chokepoint is the router, not the worker |
 | | "The cloud adapter also refuses restricted requests" — it does not (KI-04) |
@@ -172,7 +172,7 @@ types — so no mapping layer exists.
 
 `apps/server/src/engine.ts` is the only file that touches `@ps154/ai`. It:
 
-1. calls the real engine **only if `GROQ_API_KEY` is set and is not `gsk_placeholder`** (KI-03);
+1. calls the real engine **only if the key for `AI_PROVIDER` is set** — `GEMINI_API_KEY` when `gemini`, else `GROQ_API_KEY` (KI-03);
 2. adapts the engine's result (`artifact`, `grounding{grounded_count,total_claims}`) into the
    API's shape (`content`, `grounding_score`);
 3. emits the `running` and `validating` progress phases (KI-26);
@@ -372,7 +372,7 @@ The router is the only way a prompt leaves the package.
 | 1 | `classification === 'restricted'` | Ollama only | `policy` |
 | 2 | Cloud counter over budget: `INCR ratelimit:provider:cloud`, `EXPIRE 60`, allowed while ≤ `CLOUD_RPM` (default 10) | Ollama | `rate_limit` |
 | 3 | `classification === 'internal'` | `Redactor` masks the **user** message (KI-01) | — |
-| 4 | Cloud call, up to three tries, sleeping 500 · 2ⁿ ms between failures | Groq | — |
+| 4 | Cloud call, up to three tries, sleeping 500 · 2ⁿ ms between failures | Gemini | — |
 | 5 | HTTP 429 | Stop retrying, go to Ollama | `rate_limit` |
 | 6 | Three transport failures | Ollama, sent the **unmasked** request | `network` |
 | 7 | Any non-transport error | Thrown to the caller | — |
@@ -386,16 +386,16 @@ in three other places, but nothing throws it (KI-04).
 
 ### 6.2 Adapters — `adapters.ts`
 
-| | `GroqAdapter` | `OllamaAdapter` |
+| | `GeminiAdapter` (or `GroqAdapter`, selected by `AI_PROVIDER`) | `OllamaAdapter` |
 | --- | --- | --- |
-| Endpoint | `groq-sdk` chat completions | `POST {OLLAMA_URL}/api/chat` |
-| Model | `CLOUD_MODEL`, default `llama-3.3-70b-versatile` | `LOCAL_MODEL`, default `qwen2.5:7b` |
+| Endpoint | `@google/genai` `generateContent` | `POST {OLLAMA_URL}/api/chat` |
+| Model | `GEMINI_MODEL`, default `gemini-2.5-flash-lite` (Groq: `CLOUD_MODEL`) | `LOCAL_MODEL`, default `qwen2.5:7b` |
 | Temperature | 0 | 0 |
-| Structured output | `response_format: json_schema`, `strict: true`, else `json_object` | `format:` the JSON Schema, else `'json'` |
-| Limits | `max_completion_tokens 8192` | `num_ctx 8192`, timeout `LOCAL_TIMEOUT_MS` (180 s) |
+| Structured output | `responseMimeType: application/json` and `responseSchema` (Groq: strict `json_schema`) | `format:` the JSON Schema, else `'json'` |
+| Limits | provider default (Groq: `max_completion_tokens 8192`) | `num_ctx 8192`, timeout `LOCAL_TIMEOUT_MS` (180 s) |
 | Errors | 429 → `RateLimitError`; anything else → `TransportError` | non-OK, empty, timeout → `TransportError` |
 
-A wrong or expired Groq key surfaces as `TransportError`, so it is retried three times and then
+A wrong or expired Gemini key, or a model id the key cannot use, surfaces as `TransportError`, so it is retried three times and then
 falls back to Ollama with `fallback_reason: network`.
 
 ### 6.3 Extraction — `extract.ts`
@@ -460,7 +460,7 @@ by it) or `framing` (connective language asserting nothing).
 
 ### 6.6 Verifier — `verifier.ts`
 
-Plain TypeScript, no model. `verifyClaims(claims, spans)` runs four checks; `passed` is true only
+Plain TypeScript, no model. `verifyClaims(claims, spans)` runs five checks; `passed` is true only
 if there are no findings.
 
 | # | `check` | Rule | Catches |
@@ -490,7 +490,7 @@ Exactly one model call for **all** failing claims together.
 - **Output:** a strict JSON schema of `{ revisions: [{ id, text, source_refs, status }] }`; every
   target id must come back, and no unknown id may.
 - `replaceClaimNode()` writes each revision into the artefact by id, ids are reassigned, and the
-  four checks run again.
+  five checks run again.
 - A malformed revision **throws**, which the engine bridge turns into the stub (KI-12).
 
 ### 6.8 Fault injection — `DEMO_PERTURB`
@@ -561,7 +561,7 @@ Two defects to know: `since` is not validated (KI-06 — a malformed value spins
 
 | Threat | Response | Residual risk |
 | --- | --- | --- |
-| Model states something the source does not support | Four checks, one repair, human approval | Identifiers in plain-string fields and severity are not checked (KI-10) |
+| Model states something the source does not support | Five checks, one repair, human approval | Identifiers in plain-string fields and severity are not checked (KI-10) |
 | Hostile document instructs the model | Data-in-delimiters (extraction); schema; citation check | Generation prompt weakness (KI-09); no automated injection test |
 | Restricted content leaves the host | Routing check before adapter selection | One layer only; an Ollama-less, key-less deployment never reaches the real engine (KI-03) |
 | Internal content leaks identifiers | Masking | Generation and repair send them unmasked (KI-01) |
@@ -675,8 +675,10 @@ screenshots. The UI still imports several types from `shared-temp.ts` rather tha
 | `DATABASE_URL`, `REDIS_URL` | localhost | server, engine | Connections |
 | `JWT_SECRET` | *example string* | server | **Must be replaced.** The example passes the length check, so a copied file runs with a public secret |
 | `PORT`, `WEB_ORIGIN` | 8080, `http://localhost:5173` | server | Listen port; the one allowed CORS origin |
-| `GROQ_API_KEY` | empty | server, engine | **Without it the real engine is never used** (KI-03) |
-| `CLOUD_MODEL` | `llama-3.3-70b-versatile` | engine | Pin the exact version before a demo |
+| `AI_PROVIDER` | `groq` | engine | `gemini` or `groq`. Picks the cloud adapter and which key the server checks |
+| `GEMINI_API_KEY` | placeholder | server, engine | **Without the key for the chosen provider the real engine is never used** (KI-03) |
+| `GEMINI_MODEL` | `gemini-2.5-flash-lite` | engine | Pin the exact version before a demo |
+| `GROQ_API_KEY`, `CLOUD_MODEL` | placeholder, `llama-3.3-70b-versatile` | engine | Used when `AI_PROVIDER=groq` |
 | `CLOUD_RPM` | 10 | engine | Cloud calls per 60 s before falling back to Ollama |
 | `OLLAMA_URL`, `LOCAL_MODEL` | `http://localhost:11434`, `qwen2.5:7b` | engine | Local model |
 | `LOCAL_NUM_CTX`, `LOCAL_TIMEOUT_MS` | 8192, 180000 | engine | Context window and timeout |
@@ -719,7 +721,7 @@ There is no production Dockerfile, no TLS termination, no process supervision an
 | Package | Files | Tests | Covers |
 | --- | --- | --- | --- |
 | `shared` | `spans`, `api` | 5 | Span offsets and page numbers; batch request validation |
-| `ai` | `identifiers`, `provenance`, `verify`, `pipeline` | 25 | Identifier and hedge detection; claim ids and post-hoc citation; the four checks; **the two-call cap (AC-17)** against a fake router |
+| `ai` | `identifiers`, `provenance`, `verify`, `pipeline` | 25 | Identifier and hedge detection; claim ids and post-hoc citation; the five checks; **the two-call cap (AC-17)** against a fake router |
 | `server` | `audit`, `batch-status`, `export` | 10 | Hash-chain validity, edit and deletion detection; `complete` / `partial` / `failed`; export and envelope mapping |
 | `web` | `state`, `useBatchStream`, `Card`, `ClaimSpan`, `ConfigPanel`, `Login`, `Signup` | 21 | Reducer patching one card; reconnect from the last `seq`; card states and error boundary; **click-to-source (AC-2)**; override payload; auth forms |
 
@@ -775,7 +777,7 @@ model, which takes 90–130 s per artefact (KI-25).
 | Status | Requirements |
 | --- | --- |
 | **Implemented** | FR-1, 2, 4, 5, 6, 7 · 8, 9, 10, 11, 12, 13 · 15, 16 · 18, 19, 20 · 22 · 25, 26, 27 · 32, 33 · 36, 37, 38 · 40, 41, 42 · 44, 45, 46, 47 |
-| **Partial** | FR-14 (a format touches schema, prompt, `FORMAT_SCHEMAS`, `/formats` and a renderer, not one registry entry) · FR-17 (four checks; schema failure not repaired) · FR-28 (Markdown and text, no PDF) · FR-34 (API only) · FR-39 (extraction only) · FR-43 (counts only) · FR-48 (CVE-based) |
+| **Partial** | FR-14 (a format touches schema, prompt, `FORMAT_SCHEMAS`, `/formats` and a renderer, not one registry entry) · FR-17 (five checks; schema failure not repaired) · FR-28 (Markdown and text, no PDF) · FR-34 (API only) · FR-39 (extraction only) · FR-43 (counts only) · FR-48 (CVE-based) |
 | **Not built** | FR-3 URL ingest · FR-21 source edit (sources are immutable) · FR-23 cancel · FR-24 inline edit · FR-29 SRT · FR-30 pack archive · FR-31 PPTX · FR-35 prompt admin |
 
 **Acceptance criteria — 8 verified, 2 implemented but unverified, 5 partial or different, 3 not built (of 18).**
@@ -813,8 +815,8 @@ cleanliness. Owners: **B** backend · **C** frontend · **D** AI · **A** deck.
 | --- | --- | --- | --- | --- | --- |
 | KI-01 | **High** | The internal-tier redactor masks only the user message. Generation and repair put the canonical object — IPs, domains, hashes, emails — in the **system** message, so they reach the cloud unmasked. The UI states the opposite | `Redactor.maskRequest` returns `{...req, user}`. Reproduced 29 Sep with a spy router: identifier present in `system`, absent from `user` | Mask both fields, or move the canonical into the user message; add a test | D |
 | KI-02 | **High** | Setting `REDACT_TERMS` destroys the text. `redact.ts` iterates `env.REDACT_TERMS`, a string, so it masks every *character* | Reproduced: `"Alice Bennett"` turned `Contact Alice Bennett…` into `Co<<NAME_8>><<NAME_9>>a…` | Iterate the exported `redactTerms` array; add a test | D |
-| KI-03 | **High** | `engine.ts` uses the real engine only when `GROQ_API_KEY` is set — including for `restricted` sources. An Ollama-only or air-gapped deployment never reaches Ollama and gets the stub | `engine.ts`, first condition in both functions | Route by classification first; require a key only for the cloud path | B |
-| KI-04 | Medium | No defence in depth on egress. `EgressBlocked` is defined and caught in three places, but nothing throws it; the Groq adapter accepts a restricted request if called directly | `grep EgressBlocked` | Throw it in `GroqAdapter.generate` when `classification === 'restricted'`; add a test | D |
+| KI-03 | **High** | `engine.ts` uses the real engine only when the key for `AI_PROVIDER` is set — including for `restricted` sources. An Ollama-only or air-gapped deployment never reaches Ollama and gets the stub | `engine.ts`, first condition in both functions | Route by classification first; require a key only for the cloud path | B |
+| KI-04 | Medium | No defence in depth on egress. `EgressBlocked` is defined and caught in three places, but nothing throws it; the Gemini adapter accepts a restricted request if called directly | `grep EgressBlocked` | Throw it in `GeminiAdapter.generate` when `classification === 'restricted'`; add a test | D |
 | KI-05 | Medium | No ownership checks on `GET /sources/{id}`, `GET /jobs/{id}`, the WebSocket, `regenerate`, `submit` or `export`. Any signed-in user, and signup is open, can read or act on anything whose UUID they know. `submit` also ignores the current `review_state`, so it can reset an approval | Route source | Check `created_by` or reviewer/admin role on each; guard state transitions | B |
 | KI-06 | Medium | The WebSocket `since` value is passed unvalidated to `XREAD`; on error the loop `continue`s with no delay. One malformed socket drives about **1,770 Redis commands/s** until it closes; a valid one drives ~0 | Reproduced 29 Sep: 5,320 commands in 3 s vs 1 | Validate against `^\d+-\d+$\|^0$`; back off on error; cap sockets per user | B |
 | KI-07 | Medium | Open signup, no login lockout or rate limit, seeded accounts (`admin` / `demo1234`) published in a public repo, and an example `JWT_SECRET` that passes validation | `auth.ts`, `seed.ts`, `.env.example` | Delete seeded accounts and rotate the secret before any shared deployment; add rate limiting | B |

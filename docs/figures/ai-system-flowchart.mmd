@@ -20,7 +20,7 @@ flowchart TB
   subgraph TWO["ROUTE + GENERATE · one BullMQ job per format, 3 in flight"]
     D["3 BUILD PROMPT<br/>system = rules + canonical + JSON Schema<br/>user = audience · tone · detail · language<br/>advisory · executive summary · LinkedIn only"]:::step
     E{"4 ROUTER · EGRESS GATE"}:::gate
-    G["5a GROQ · cloud<br/>llama-3.3-70b-versatile · temperature 0<br/>json_schema strict · 3 tries, 500·2^n ms"]:::model
+    G["5a GEMINI · cloud<br/>GEMINI_MODEL · temperature 0<br/>responseSchema · 3 tries, 500·2^n ms"]:::model
     L["5b OLLAMA · on the host<br/>qwen2.5:7b · num_ctx 8192<br/>format = JSON Schema · 180 s timeout"]:::model
     P["6 PARSE · VALIDATE<br/>parseModelJson() → outermost braces<br/>format schema safeParse<br/>invalid → FORMAT_INVALID, no repair"]:::step
     D --> E
